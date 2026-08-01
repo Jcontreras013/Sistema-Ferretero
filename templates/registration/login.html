@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Ingresar - Sistema Ferretero{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h1 class="h4 mb-3">Iniciar sesión</h1>
+                <form method="post">
+                    {% csrf_token %}
+                    {% if form.errors %}
+                        <div class="alert alert-danger">Usuario o contraseña incorrectos.</div>
+                    {% endif %}
+                    <div class="mb-3">
+                        <label class="form-label">Usuario</label>
+                        {{ form.username }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Contraseña</label>
+                        {{ form.password }}
+                    </div>
+                    <input type="hidden" name="next" value="{{ next }}">
+                    <button class="btn btn-primary w-100" type="submit">Ingresar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

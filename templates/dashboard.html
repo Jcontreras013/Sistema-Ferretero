@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Sistema Ferretero{% endblock %}
+{% block content %}
+<h1 class="h3 mb-4">Panel general</h1>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h6 class="text-muted">Ventas de hoy</h6>
+                <p class="h3">L. {{ total_ventas_hoy }}</p>
+                <p class="text-muted mb-0">{{ cantidad_ventas_hoy }} transacción(es)</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h6 class="text-muted">Ventas del mes</h6>
+                <p class="h3">L. {{ total_ventas_mes }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h6 class="text-muted">Productos con stock bajo</h6>
+                <p class="h3">{{ stock_bajo|length }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">Stock bajo mínimo</div>
+            <ul class="list-group list-group-flush">
+                {% for stock in stock_bajo %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>{{ stock.producto.nombre }} ({{ stock.sucursal.codigo }})</span>
+                        <span class="badge bg-danger rounded-pill">{{ stock.cantidad }}</span>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item text-muted">Sin alertas de stock.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">Últimas ventas</div>
+            <ul class="list-group list-group-flush">
+                {% for venta in ultimas_ventas %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>#{{ venta.id }} - {{ venta.sucursal.codigo }} - {{ venta.cliente|default:"Consumidor final" }}</span>
+                        <span>L. {{ venta.total }} ({{ venta.get_estado_display }})</span>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item text-muted">Sin ventas registradas.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
