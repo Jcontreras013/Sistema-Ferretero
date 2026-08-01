@@ -1,10 +1,3 @@
-databases:
-  - name: sistema-ferretero-db
-    databaseName: sistema_ferretero
-    user: sistema_ferretero
-    plan: free
-    region: oregon
-
 services:
   - type: web
     name: sistema-ferretero
@@ -23,10 +16,11 @@ services:
         value: "False"
       - key: WEB_CONCURRENCY
         value: "4"
+      # Base de datos PostgreSQL externa (Neon, free tier).
+      # Pega aquí la "connection string" de Neon en el dashboard de Render
+      # (no viaja en este archivo). Debe incluir sslmode=require.
       - key: DATABASE_URL
-        fromDatabase:
-          name: sistema-ferretero-db
-          property: connectionString
+        sync: false
       # Opcional: crea el superusuario inicial en el primer deploy.
       # Define los valores en el dashboard de Render (no viajan en este archivo).
       - key: DJANGO_SUPERUSER_USERNAME
