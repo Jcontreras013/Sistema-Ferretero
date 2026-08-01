@@ -72,6 +72,42 @@ o `http://localhost:8000/` para el dashboard (requiere iniciar sesión en
 5. Revisar el dashboard (`/`) para ventas del día/mes y alertas de stock
    bajo.
 
+## Despliegue en Render (Blueprint)
+
+El repositorio incluye `render.yaml`, un [Blueprint de Render](https://render.com/docs/blueprint-spec)
+que crea automáticamente:
+
+- Un servicio web Python (`sistema-ferretero`) que corre `gunicorn config.wsgi:application`.
+- Una base de datos PostgreSQL (`sistema-ferretero-db`), conectada al servicio
+  vía la variable `DATABASE_URL`.
+
+### Pasos
+
+1. En el dashboard de Render: **New +** → **Blueprint**, elige este repositorio
+   y la rama a desplegar. Render detecta `render.yaml` automáticamente.
+2. Antes de aplicar, Render te deja revisar el plan (`free` en ambos recursos
+   por defecto; súbelo a `starter` o superior para producción real, ya que el
+   plan free duerme por inactividad y la base de datos free expira a los 90 días).
+3. (Opcional) En el servicio web, define las variables `DJANGO_SUPERUSER_USERNAME`,
+   `DJANGO_SUPERUSER_EMAIL` y `DJANGO_SUPERUSER_PASSWORD` para que `build.sh`
+   cree el superusuario inicial en el primer deploy.
+4. Aplica el Blueprint. Render construye con `build.sh` (instala dependencias,
+   corre `collectstatic` y `migrate`) y luego levanta el servicio.
+5. Carga los datos base (sucursales, CAI, productos) desde `/admin/` en la URL
+   `https://<tu-servicio>.onrender.com/admin/`.
+
+### Notas importantes para producción
+
+- **Archivos subidos (imágenes de producto):** el disco del servicio web es
+  efímero en el plan free/starter sin disco persistente — las imágenes
+  subidas vía `Producto.imagen` se pierden en cada deploy. Para producción,
+  agrega un [disco persistente de Render](https://render.com/docs/disks) o
+  cambia `MEDIA` a un backend como S3 (`django-storages`).
+- **Facturación electrónica:** sigue usando `FacturacionMock` (ver sección
+  anterior) hasta integrar un proveedor certificado del SAR.
+- `SECRET_KEY` se genera automáticamente por Render (`generateValue: true`);
+  no la definas tú mismo en el blueprint.
+
 ## Pendiente / próximos pasos sugeridos
 
 - Interfaz POS dedicada (hoy la carga de ventas se hace vía Django Admin).
