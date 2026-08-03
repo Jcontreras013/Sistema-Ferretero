@@ -1,0 +1,133 @@
+/* Reskin del admin de Django con la identidad de marca de Sistema Ferretero. */
+
+:root,
+html[data-theme="light"] {
+  --primary: #f97316;
+  --primary-fg: #fff;
+  --secondary: #1f2937;
+  --accent: #f97316;
+
+  --header-color: #fff;
+  --header-branding-color: #fff;
+  --header-bg: #111827;
+  --header-link-color: #fff;
+
+  --breadcrumbs-fg: #fde8d0;
+  --breadcrumbs-link-fg: #fff;
+  --breadcrumbs-bg: #1f2937;
+
+  --link-fg: #c2410c;
+  --link-hover-color: #f97316;
+  --link-selected-fg: #c2410c;
+
+  --button-fg: #111827;
+  --button-bg: #f97316;
+  --button-hover-bg: #c2410c;
+  --default-button-bg: #1f2937;
+  --default-button-hover-bg: #111827;
+
+  --object-tools-fg: #111827;
+  --object-tools-bg: #f97316;
+  --object-tools-hover-bg: #c2410c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --primary: #f97316;
+    --primary-fg: #111827;
+    --secondary: #111827;
+    --accent: #f97316;
+
+    --header-color: #fff;
+    --header-branding-color: #fff;
+    --header-bg: #0b1120;
+    --header-link-color: #fff;
+
+    --breadcrumbs-fg: #fde8d0;
+    --breadcrumbs-link-fg: #fff;
+    --breadcrumbs-bg: #1f2937;
+
+    --link-fg: #fb923c;
+    --link-hover-color: #f97316;
+    --link-selected-fg: #fb923c;
+
+    --button-fg: #111827;
+    --button-bg: #f97316;
+    --button-hover-bg: #fb923c;
+    --default-button-bg: #1f2937;
+    --default-button-hover-bg: #374151;
+
+    --object-tools-fg: #111827;
+    --object-tools-bg: #f97316;
+    --object-tools-hover-bg: #fb923c;
+  }
+}
+
+html[data-theme="dark"] {
+  --primary: #f97316;
+  --primary-fg: #111827;
+  --secondary: #111827;
+  --accent: #f97316;
+
+  --header-color: #fff;
+  --header-branding-color: #fff;
+  --header-bg: #0b1120;
+  --header-link-color: #fff;
+
+  --breadcrumbs-fg: #fde8d0;
+  --breadcrumbs-link-fg: #fff;
+  --breadcrumbs-bg: #1f2937;
+
+  --link-fg: #fb923c;
+  --link-hover-color: #f97316;
+  --link-selected-fg: #fb923c;
+
+  --button-fg: #111827;
+  --button-bg: #f97316;
+  --button-hover-bg: #fb923c;
+  --default-button-bg: #1f2937;
+  --default-button-hover-bg: #374151;
+
+  --object-tools-fg: #111827;
+  --object-tools-bg: #f97316;
+  --object-tools-hover-bg: #fb923c;
+}
+
+body {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+#header {
+  padding: 0.9rem 1.5rem;
+}
+
+#branding h1,
+#branding div#site-name {
+  font-weight: 700;
+}
+
+.admin-back-link {
+  color: var(--header-link-color);
+  opacity: 0.85;
+  text-decoration: none;
+  margin-right: 1rem;
+  font-size: 0.85rem;
+}
+
+.admin-back-link:hover {
+  opacity: 1;
+  text-decoration: underline;
+  color: var(--header-link-color);
+}
+
+div.breadcrumbs {
+  font-size: 0.8rem;
+}
+
+.module h2, .module caption, .inline-group h2 {
+  border-radius: 6px 6px 0 0;
+}
+
+.button, input[type=submit], input[type=button], .submit-row input, a.button {
+  border-radius: 8px;
+}

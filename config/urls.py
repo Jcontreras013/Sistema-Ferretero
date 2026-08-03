@@ -6,6 +6,10 @@ from django.urls import include, path
 
 from usuarios.forms import LoginForm
 
+admin.site.site_header = "Sistema Ferretero"
+admin.site.site_title = "Sistema Ferretero"
+admin.site.index_title = "Panel de administración"
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path(
