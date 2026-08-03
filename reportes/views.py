@@ -3,7 +3,7 @@ from django.db.models import F, Sum
 from django.shortcuts import render
 from django.utils import timezone
 
-from inventario.models import Stock
+from inventario.models import Producto, Stock
 from ventas.models import Venta
 
 
@@ -18,15 +18,18 @@ def dashboard(request):
     stock_bajo = (
         Stock.objects.filter(cantidad__lte=F("producto__stock_minimo"))
         .select_related("producto", "sucursal")
-        .order_by("cantidad")[:20]
+        .order_by("cantidad")[:8]
     )
-    ultimas_ventas = Venta.objects.select_related("sucursal", "cliente").order_by("-fecha")[:10]
+    ultimas_ventas = Venta.objects.select_related("sucursal", "cliente").order_by("-fecha")[:8]
 
     context = {
         "total_ventas_hoy": ventas_hoy.aggregate(t=Sum("total"))["t"] or 0,
         "cantidad_ventas_hoy": ventas_hoy.count(),
         "total_ventas_mes": ventas_mes.aggregate(t=Sum("total"))["t"] or 0,
+        "cantidad_ventas_mes": ventas_mes.count(),
+        "productos_activos": Producto.objects.filter(activo=True).count(),
         "stock_bajo": stock_bajo,
+        "total_stock_bajo": stock_bajo.count(),
         "ultimas_ventas": ultimas_ventas,
     }
     return render(request, "dashboard.html", context)

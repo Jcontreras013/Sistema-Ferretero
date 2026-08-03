@@ -1,65 +1,89 @@
 {% extends "base.html" %}
-{% block title %}Dashboard - Sistema Ferretero{% endblock %}
+{% block title %}Panel general - Sistema Ferretero{% endblock %}
+{% block page_title %}Panel general{% endblock %}
 {% block content %}
-<h1 class="h3 mb-4">Panel general</h1>
 
 <div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h6 class="text-muted">Ventas de hoy</h6>
-                <p class="h3">L. {{ total_ventas_hoy }}</p>
-                <p class="text-muted mb-0">{{ cantidad_ventas_hoy }} transacción(es)</p>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon bg-amber"><i class="bi bi-cash-coin"></i></div>
+            <div>
+                <div class="stat-label">Ventas de hoy</div>
+                <div class="stat-value">L. {{ total_ventas_hoy }}</div>
+                <div class="stat-sub">{{ cantidad_ventas_hoy }} transacción(es)</div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h6 class="text-muted">Ventas del mes</h6>
-                <p class="h3">L. {{ total_ventas_mes }}</p>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon bg-blue"><i class="bi bi-graph-up-arrow"></i></div>
+            <div>
+                <div class="stat-label">Ventas del mes</div>
+                <div class="stat-value">L. {{ total_ventas_mes }}</div>
+                <div class="stat-sub">{{ cantidad_ventas_mes }} transacción(es)</div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h6 class="text-muted">Productos con stock bajo</h6>
-                <p class="h3">{{ stock_bajo|length }}</p>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon bg-green"><i class="bi bi-box-seam"></i></div>
+            <div>
+                <div class="stat-label">Productos activos</div>
+                <div class="stat-value">{{ productos_activos }}</div>
+                <div class="stat-sub">en catálogo</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon bg-red"><i class="bi bi-exclamation-triangle"></i></div>
+            <div>
+                <div class="stat-label">Alertas de stock</div>
+                <div class="stat-value">{{ total_stock_bajo }}</div>
+                <div class="stat-sub">bajo el mínimo</div>
             </div>
         </div>
     </div>
 </div>
 
 <div class="row g-3">
-    <div class="col-md-6">
-        <div class="card shadow-sm">
-            <div class="card-header">Stock bajo mínimo</div>
-            <ul class="list-group list-group-flush">
+    <div class="col-lg-6">
+        <div class="panel">
+            <div class="panel-header"><i class="bi bi-exclamation-triangle text-danger"></i> Stock bajo mínimo</div>
+            <div class="panel-body">
                 {% for stock in stock_bajo %}
-                    <li class="list-group-item d-flex justify-content-between">
-                        <span>{{ stock.producto.nombre }} ({{ stock.sucursal.codigo }})</span>
+                    <div class="panel-row">
+                        <span>{{ stock.producto.nombre }} <span class="text-muted">({{ stock.sucursal.codigo }})</span></span>
                         <span class="badge bg-danger rounded-pill">{{ stock.cantidad }}</span>
-                    </li>
+                    </div>
                 {% empty %}
-                    <li class="list-group-item text-muted">Sin alertas de stock.</li>
+                    <div class="panel-empty"><i class="bi bi-check-circle text-success"></i> Sin alertas de stock.</div>
                 {% endfor %}
-            </ul>
+            </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card shadow-sm">
-            <div class="card-header">Últimas ventas</div>
-            <ul class="list-group list-group-flush">
+    <div class="col-lg-6">
+        <div class="panel">
+            <div class="panel-header"><i class="bi bi-receipt text-primary"></i> Últimas ventas</div>
+            <div class="panel-body">
                 {% for venta in ultimas_ventas %}
-                    <li class="list-group-item d-flex justify-content-between">
-                        <span>#{{ venta.id }} - {{ venta.sucursal.codigo }} - {{ venta.cliente|default:"Consumidor final" }}</span>
-                        <span>L. {{ venta.total }} ({{ venta.get_estado_display }})</span>
-                    </li>
+                    <div class="panel-row">
+                        <span>#{{ venta.id }} · {{ venta.sucursal.codigo }} · {{ venta.cliente|default:"Consumidor final" }}</span>
+                        <span>
+                            L. {{ venta.total }}
+                            {% if venta.estado == "COMPLETADA" %}
+                                <span class="badge bg-success">{{ venta.get_estado_display }}</span>
+                            {% elif venta.estado == "ANULADA" %}
+                                <span class="badge bg-secondary">{{ venta.get_estado_display }}</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">{{ venta.get_estado_display }}</span>
+                            {% endif %}
+                        </span>
+                    </div>
                 {% empty %}
-                    <li class="list-group-item text-muted">Sin ventas registradas.</li>
+                    <div class="panel-empty">Sin ventas registradas.</div>
                 {% endfor %}
-            </ul>
+            </div>
         </div>
     </div>
 </div>
