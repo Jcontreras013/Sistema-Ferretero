@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Venta {{ sale.number }}{% endblock %}
+{% block content %}
+<div class="{% if company.receipt_format == 'thermal_80' %}receipt-thermal-80{% elif company.receipt_format == 'thermal_58' %}receipt-thermal-58{% endif %}">
+<div class="invoice-box card p-4">
+    <div class="d-flex justify-content-between align-items-start receipt-header">
+        <div>
+            <h3>{{ company.trade_name|default:company.business_name|default:"Ferretería" }}</h3>
+            {% if company.rtn %}<div class="small">RTN: {{ company.rtn }}</div>{% endif %}
+            {% if company.address %}<div class="small">{{ company.address }}</div>{% endif %}
+            <div class="text-muted">Factura {{ sale.number }}</div>
+        </div>
+        <div class="text-end">
+            <div>Fecha: {{ sale.created_at|date:"d/m/Y H:i" }}</div>
+            <div>Estado:
+                {% if sale.status == "completada" %}
+                    <span class="badge bg-success">Completada</span>
+                {% else %}
+                    <span class="badge bg-danger">Anulada</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <hr>
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <strong>Cliente:</strong> {{ sale.client.name|default:"Consumidor final" }}<br>
+            {% if sale.client %}<strong>RTN / Identidad:</strong> {{ sale.client.document|default:"—" }}<br>{% endif %}
+        </div>
+        <div class="col-md-6 text-md-end">
+            <strong>Cajero:</strong> {{ sale.user|default:"—" }}<br>
+            <strong>Forma de pago:</strong> {{ sale.get_payment_method_display }}
+        </div>
+    </div>
+
+    <table class="table">
+        <thead><tr><th>Producto</th><th>Cantidad</th><th class="col-unit-price">Precio unit.</th><th class="col-optional">ISV</th><th class="text-end">Subtotal</th></tr></thead>
+        <tbody>
+        {% for item in sale.items.all %}
+            <tr>
+                <td>{{ item.product.name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td class="col-unit-price">L {{ item.unit_price|floatformat:2 }}</td>
+                <td class="col-optional">{{ item.tax_rate|floatformat:0 }}%</td>
+                <td class="text-end">L {{ item.subtotal|floatformat:2 }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="row justify-content-end">
+        <div class="col-md-4">
+            <div class="d-flex justify-content-between"><span>Subtotal</span><span>L {{ sale.subtotal|floatformat:2 }}</span></div>
+            <div class="d-flex justify-content-between"><span>Impuesto</span><span>L {{ sale.tax|floatformat:2 }}</span></div>
+            <div class="d-flex justify-content-between fs-5"><strong>Total</strong><strong>L {{ sale.total|floatformat:2 }}</strong></div>
+        </div>
+    </div>
+
+    {% if sale.notes %}<p class="mt-3"><strong>Notas:</strong> {{ sale.notes }}</p>{% endif %}
+
+    <div class="mt-4 no-print">
+        <button onclick="window.print()" class="btn btn-outline-secondary"><i class="bi bi-printer"></i> Imprimir</button>
+        <a href="{% url 'sales:sale_list' %}" class="btn btn-outline-secondary">Volver a ventas</a>
+        {% if sale.status == "completada" and is_admin %}
+        <form method="post" action="{% url 'sales:sale_cancel' sale.pk %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-danger" onclick="return confirm('¿Anular esta venta? El stock será restituido.');">
+                <i class="bi bi-x-circle"></i> Anular venta
+            </button>
+        </form>
+        {% endif %}
+        {% if is_admin %}
+        <a href="{% url 'sales:sale_delete' sale.pk %}" class="btn btn-outline-danger"><i class="bi bi-trash"></i> Eliminar venta</a>
+        {% endif %}
+    </div>
+</div>
+
+{% if sale.credit_notes.all %}
+<div class="invoice-box card p-4 mt-3 no-print">
+    <h6>Notas de crédito relacionadas</h6>
+    <table class="table table-sm mb-0">
+        <thead><tr><th>No.</th><th>Fecha</th><th>Motivo</th><th>Total</th><th></th></tr></thead>
+        <tbody>
+        {% for cn in sale.credit_notes.all %}
+            <tr>
+                <td><a href="{% url 'sales:credit_note_detail' cn.pk %}">{{ cn.number }}</a></td>
+                <td>{{ cn.created_at|date:"d/m/Y H:i" }}</td>
+                <td>{{ cn.reason }}</td>
+                <td>L {{ cn.total|floatformat:2 }}</td>
+                <td>
+                    {% if is_admin %}
+                    <a href="{% url 'sales:credit_note_delete' cn.pk %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></a>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if sale.status == "completada" %}
+<div class="invoice-box card p-4 mt-3 no-print">
+    <h6><i class="bi bi-arrow-return-left"></i> Registrar devolución (nota de crédito)</h6>
+    <form method="post" action="{% url 'sales:credit_note_create' sale.pk %}">
+        {% csrf_token %}
+        <table class="table table-sm">
+            <thead><tr><th>Producto</th><th>Vendido</th><th>Disponible a devolver</th><th>Cantidad a devolver</th></tr></thead>
+            <tbody>
+            {% for item in sale.items.all %}
+                <tr>
+                    <td>{{ item.product.name }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ item.returnable_quantity }}</td>
+                    <td>
+                        <input type="hidden" name="item_id" value="{{ item.pk }}">
+                        <input type="number" name="quantity" min="0" max="{{ item.returnable_quantity }}" step="0.01"
+                               class="form-control form-control-sm" style="width:100px" {% if item.returnable_quantity <= 0 %}disabled{% endif %}>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <div class="mb-3">
+            <label class="form-label">Motivo de la devolución</label>
+            <input type="text" name="reason" class="form-control" required placeholder="Ej. producto en mal estado, cliente se arrepintió...">
+        </div>
+        <button type="submit" class="btn btn-outline-danger">Generar nota de crédito</button>
+    </form>
+</div>
+{% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if autoprint %}
+<script>
+window.addEventListener('load', function () {
+    window.print();
+});
+</script>
+{% endif %}
+{% endblock %}

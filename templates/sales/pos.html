@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+{% block title %}Punto de venta{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h2><i class="bi bi-cash-register"></i> Punto de venta</h2>
+    <span class="badge bg-success">Caja abierta desde {{ open_session.opened_at|date:"d/m/Y H:i" }}</span>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-7">
+        <input type="text" id="searchBox" class="form-control mb-3" placeholder="Buscar o escanear código de barras... (Enter para agregar)" autofocus>
+        <div id="productGrid" class="row g-2" style="max-height: 65vh; overflow-y: auto;"></div>
+    </div>
+
+    <div class="col-md-5">
+        <form method="post" id="saleForm">
+            {% csrf_token %}
+            <input type="hidden" name="cart_data" id="cartData">
+
+            <div class="card p-3 mb-3">
+                <label class="form-label">Cliente</label>
+                <div class="position-relative mb-2">
+                    <input type="text" id="clientSearch" class="form-control" placeholder="Buscar cliente por nombre..." autocomplete="off">
+                    <input type="hidden" name="client_id" id="clientIdInput" value="">
+                    <div id="clientResults" class="list-group position-absolute w-100 shadow-sm" style="z-index:1000; max-height:220px; overflow-y:auto; display:none;"></div>
+                </div>
+
+                <input type="text" name="new_client_name" id="newClientName" class="form-control mb-1" placeholder="Nombre del nuevo cliente" style="display:none;">
+
+                <label class="form-label">RTN del cliente</label>
+                <input type="text" name="client_rtn" id="clientRtn" class="form-control mb-1" placeholder="Selecciona un cliente para agregar su RTN" disabled>
+                <div class="small text-muted mb-2" id="rtnHint"></div>
+
+                <label class="form-label">Forma de pago</label>
+                <select name="payment_method" class="form-select mb-2">
+                    {% for value, label in payment_methods %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <label class="form-label">Notas</label>
+                <input type="text" name="notes" class="form-control">
+            </div>
+
+            <div class="card p-3">
+                <h6>Carrito</h6>
+                <table class="table table-sm" id="cartTable">
+                    <thead><tr><th>Producto</th><th>Cant.</th><th>Precio</th><th>Subt.</th><th></th></tr></thead>
+                    <tbody id="cartBody"></tbody>
+                </table>
+                <div class="d-flex justify-content-between"><span>Subtotal</span><strong id="cartSubtotal">L 0.00</strong></div>
+                <div class="d-flex justify-content-between"><span>Impuesto (ISV)</span><strong id="cartTax">L 0.00</strong></div>
+                <div class="d-flex justify-content-between fs-5"><span>Total</span><strong id="cartTotal">L 0.00</strong></div>
+                <button type="submit" class="btn btn-success btn-lg mt-3" id="checkoutBtn" disabled>
+                    <i class="bi bi-check-circle"></i> Cobrar venta
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const PRODUCTS = {{ products_json|safe }};
+let cart = [];
+
+function renderProducts(filter) {
+    const grid = document.getElementById('productGrid');
+    grid.innerHTML = '';
+    const term = (filter || '').toLowerCase();
+    PRODUCTS.filter(p => p.name.toLowerCase().includes(term) || p.code.toLowerCase().includes(term) || (p.barcode && p.barcode.toLowerCase().includes(term)))
+        .forEach(p => {
+            const col = document.createElement('div');
+            col.className = 'col-6 col-lg-4';
+            col.innerHTML = `
+                <div class="card pos-product-card p-2 h-100" data-id="${p.id}">
+                    <div class="fw-bold">${p.name}</div>
+                    <div class="text-muted small">${p.code}</div>
+                    <div class="text-success">L ${parseFloat(p.price).toFixed(2)}</div>
+                    <div class="small">Stock: ${p.stock} ${p.unit}</div>
+                </div>`;
+            col.querySelector('.pos-product-card').addEventListener('click', () => addToCart(p));
+            grid.appendChild(col);
+        });
+}
+
+function addToCart(product) {
+    const existing = cart.find(item => item.id === product.id);
+    if (existing) {
+        if (existing.quantity < parseFloat(product.stock)) {
+            existing.quantity += 1;
+        }
+    } else {
+        cart.push({
+            id: product.id,
+            name: product.name,
+            price: parseFloat(product.price),
+            taxRate: parseFloat(product.tax_rate),
+            stock: parseFloat(product.stock),
+            quantity: 1,
+        });
+    }
+    renderCart();
+}
+
+function addByBarcodeOrCode(term) {
+    const clean = term.trim().toLowerCase();
+    if (!clean) return false;
+    const match = PRODUCTS.find(p => (p.barcode && p.barcode.toLowerCase() === clean) || p.code.toLowerCase() === clean);
+    if (match) {
+        addToCart(match);
+        return true;
+    }
+    return false;
+}
+
+function updateQuantity(id, quantity) {
+    const item = cart.find(i => i.id === id);
+    if (!item) return;
+    quantity = Math.max(0, Math.min(quantity, item.stock));
+    item.quantity = quantity;
+    if (item.quantity === 0) {
+        cart = cart.filter(i => i.id !== id);
+    }
+    renderCart();
+}
+
+function removeFromCart(id) {
+    cart = cart.filter(i => i.id !== id);
+    renderCart();
+}
+
+function renderCart() {
+    const body = document.getElementById('cartBody');
+    body.innerHTML = '';
+    let subtotal = 0;
+    let tax = 0;
+    cart.forEach(item => {
+        const lineSubtotal = item.price * item.quantity;
+        const lineTax = lineSubtotal * (item.taxRate / 100);
+        subtotal += lineSubtotal;
+        tax += lineTax;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${item.name}</td>
+            <td><input type="number" min="0" step="1" value="${item.quantity}" class="form-control form-control-sm" style="width:70px" data-id="${item.id}"></td>
+            <td>L ${item.price.toFixed(2)}</td>
+            <td>L ${lineSubtotal.toFixed(2)}</td>
+            <td><button type="button" class="btn btn-sm btn-outline-danger" data-remove="${item.id}"><i class="bi bi-x"></i></button></td>
+        `;
+        body.appendChild(row);
+    });
+
+    body.querySelectorAll('input[data-id]').forEach(input => {
+        input.addEventListener('change', (e) => {
+            updateQuantity(parseInt(e.target.dataset.id), parseFloat(e.target.value || '0'));
+        });
+    });
+    body.querySelectorAll('button[data-remove]').forEach(btn => {
+        btn.addEventListener('click', (e) => removeFromCart(parseInt(e.currentTarget.dataset.remove)));
+    });
+
+    const total = subtotal + tax;
+    document.getElementById('cartSubtotal').textContent = 'L ' + subtotal.toFixed(2);
+    document.getElementById('cartTax').textContent = 'L ' + tax.toFixed(2);
+    document.getElementById('cartTotal').textContent = 'L ' + total.toFixed(2);
+    document.getElementById('checkoutBtn').disabled = cart.length === 0;
+}
+
+const CLIENTS = {{ clients_json|safe }};
+const clientSearch = document.getElementById('clientSearch');
+const clientIdInput = document.getElementById('clientIdInput');
+const clientResults = document.getElementById('clientResults');
+const clientRtn = document.getElementById('clientRtn');
+const rtnHint = document.getElementById('rtnHint');
+const newClientName = document.getElementById('newClientName');
+
+let currentClient = { value: '', name: 'Consumidor final', document: '' };
+
+function syncClientRtn() {
+    const isNew = clientIdInput.value === '__new__';
+    const hasClient = !!clientIdInput.value;
+    const savedDocument = currentClient.document || '';
+
+    newClientName.style.display = isNew ? 'block' : 'none';
+    if (!isNew) {
+        newClientName.value = '';
+    }
+
+    if (isNew) {
+        clientRtn.value = '';
+        clientRtn.readOnly = false;
+        clientRtn.disabled = false;
+        clientRtn.placeholder = 'RTN del nuevo cliente (opcional)';
+        rtnHint.textContent = 'Se creará un cliente nuevo con este nombre y RTN al cobrar.';
+    } else if (!hasClient) {
+        clientRtn.value = '';
+        clientRtn.readOnly = false;
+        clientRtn.disabled = true;
+        clientRtn.placeholder = 'Selecciona un cliente para agregar su RTN';
+        rtnHint.textContent = '';
+    } else if (savedDocument) {
+        clientRtn.value = savedDocument;
+        clientRtn.readOnly = true;
+        clientRtn.disabled = false;
+        rtnHint.textContent = 'Ya registrado en este cliente.';
+    } else {
+        clientRtn.value = '';
+        clientRtn.readOnly = false;
+        clientRtn.disabled = false;
+        clientRtn.placeholder = 'Escribe el RTN (se guardará en este cliente)';
+        rtnHint.textContent = 'Este cliente no tiene RTN guardado — si lo escribes aquí, se guarda al cobrar.';
+    }
+}
+
+function selectClient(value, name, document_) {
+    clientIdInput.value = value;
+    clientSearch.value = name;
+    currentClient = { value, name, document: document_ || '' };
+    clientResults.style.display = 'none';
+    syncClientRtn();
+}
+
+function renderClientResults(term) {
+    const t = (term || '').toLowerCase();
+    const items = [];
+    items.push({ value: '', name: 'Consumidor final', document: '' });
+    items.push({ value: '__new__', name: '+ Nuevo cliente...', document: '' });
+    CLIENTS.filter(c => c.name.toLowerCase().includes(t)).forEach(c => {
+        items.push({ value: String(c.id), name: c.name, document: c.document });
+    });
+
+    clientResults.innerHTML = '';
+    items.forEach(item => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'list-group-item list-group-item-action';
+        btn.textContent = item.name;
+        btn.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            selectClient(item.value, item.name, item.document);
+        });
+        clientResults.appendChild(btn);
+    });
+    clientResults.style.display = items.length ? 'block' : 'none';
+}
+
+clientSearch.addEventListener('focus', () => {
+    clientSearch.select();
+    renderClientResults('');
+});
+clientSearch.addEventListener('input', () => renderClientResults(clientSearch.value));
+clientSearch.addEventListener('blur', () => {
+    clientResults.style.display = 'none';
+    if (clientSearch.value !== currentClient.name) {
+        clientSearch.value = currentClient.name;
+    }
+});
+
+selectClient('', 'Consumidor final', '');
+
+const searchBox = document.getElementById('searchBox');
+searchBox.addEventListener('input', (e) => renderProducts(e.target.value));
+searchBox.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        if (addByBarcodeOrCode(searchBox.value)) {
+            searchBox.value = '';
+            renderProducts('');
+        }
+    }
+});
+
+document.getElementById('saleForm').addEventListener('submit', () => {
+    document.getElementById('cartData').value = JSON.stringify(cart.map(i => ({ id: i.id, quantity: i.quantity })));
+});
+
+renderProducts('');
+renderCart();
+</script>
+{% endblock %}

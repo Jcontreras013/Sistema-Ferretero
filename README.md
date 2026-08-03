@@ -1,144 +1,158 @@
 # Sistema Ferretero
 
-Sistema de gestión para ferreterías con soporte multi-sucursal, control de
-inventario, punto de venta (POS), compras/proveedores, roles de usuario y
-facturación fiscal para Honduras (SAR).
+Aplicación web construida con Django para administrar una ferretería de una
+sola tienda: punto de venta (POS), inventario, clientes/proveedores, caja y
+reportes, adaptada al régimen fiscal de Honduras (SAR).
+
+## Funcionalidades
+
+- **Configuración fiscal del negocio:** RTN, régimen de facturación (CAI
+  impreso o CFE electrónico), rango de facturas autorizado, fecha límite de
+  emisión, tasa de ISV por defecto.
+- **Numeración de factura formato Honduras:** `000-001-01-00000001`, con
+  control automático del rango autorizado por el CAI.
+- **Punto de venta (POS):** búsqueda o escaneo de código de barras (Enter
+  agrega el producto), carrito interactivo, ISV diferenciado por producto,
+  forma de pago, y selección de cliente con buscador. Al elegir un cliente ya
+  registrado, su RTN se autocompleta; si no lo tiene, puedes escribirlo ahí
+  mismo y se guarda al cobrar. También puedes crear un cliente nuevo sin salir
+  del POS.
+- **Caja:** apertura y cierre con arqueo (monto esperado vs. contado,
+  diferencia), historial de sesiones.
+- **Notas de crédito:** devoluciones parciales o totales sobre una factura,
+  con restitución automática de stock.
+- **Inventario:** productos con código, código de barras, categoría,
+  proveedor, precios de compra/venta, ISV, stock, unidad de medida (unidad,
+  par, docena, caja, rollo, metro, pie, libra, kilogramo, litro, galón, saco,
+  quintal — para vender tornillos por caja, cable por metro, cemento por
+  saco, pintura por galón, etc.); alertas de stock bajo; movimientos de
+  inventario con motivo (compra, venta, merma, daño, robo, devolución, otro).
+- **Clientes y proveedores:** administración (CRUD) de ambos, historial de
+  compras por cliente.
+- **Ventas:** historial con filtros por fecha y cliente, detalle de factura
+  imprimible, anulación de ventas (solo administradores).
+- **Roles:** Administrador (todo) y Cajero (POS, ventas, clientes, consulta
+  de productos) — los reportes, configuración del negocio, categorías,
+  proveedores y edición de productos son solo para administradores.
+- **Gestión de usuarios (solo administradores):** crear, editar rol/contraseña
+  y eliminar usuarios desde el panel (Admin → Usuarios).
+- **Bitácora de auditoría (solo administradores):** registro de quién creó,
+  modificó o eliminó cada producto, cliente, venta, nota de crédito, sesión
+  de caja o usuario.
+- **Reportes (solo administradores):** ventas por período, productos más
+  vendidos, ganancias, stock bajo, ISV cobrado por tasa (para la declaración
+  ante el SAR), flujo de caja.
+- **Impresión de tickets:** formato configurable (térmica 80mm, térmica
+  58mm o matriz de puntos/carta), con opción de impresión automática al
+  cobrar.
+- **Importar inventario desde otro sistema (solo administradores):** en
+  Productos → Importar, sube un archivo `.xlsx`, `.xls` o `.csv`. El sistema
+  detecta automáticamente las columnas y muestra una vista previa para
+  corregir el mapeo antes de confirmar.
 
 ## Stack
 
-- Python 3.11 + Django 5
-- SQLite en desarrollo, PostgreSQL recomendado en producción
-- Backend renderizado con templates de Django + Bootstrap 5 (vía CDN)
-
-## Apps
-
-| App          | Responsabilidad                                                        |
-|--------------|-------------------------------------------------------------------------|
-| `usuarios`   | Usuario custom con roles (Admin, Gerente, Vendedor, Bodeguero, Contador) |
-| `sucursales` | Catálogo de sucursales (multi-sucursal)                                 |
-| `inventario` | Categorías, productos, stock por sucursal, movimientos y transferencias |
-| `clientes`   | Clientes (natural/jurídico, RTN, límite de crédito)                     |
-| `compras`    | Proveedores y órdenes de compra (recepción incrementa stock)            |
-| `ventas`     | Punto de venta: venta, detalle, cierres de caja (confirmar descuenta stock) |
-| `facturacion`| Configuración fiscal, CAI/rangos autorizados y documentos fiscales       |
-| `reportes`   | Dashboard con métricas básicas                                          |
-
-## Facturación fiscal (Honduras)
-
-El módulo `facturacion` modela el esquema vigente del SAR basado en **CAI**
-(Código de Autorización de Impresión): cada sucursal/punto de emisión tiene
-un `RangoAutorizado` con un rango de correlativos y una fecha límite de
-emisión. Al confirmar una venta (`Venta.confirmar()`), se reserva el
-siguiente correlativo con formato `EEE-PPP-TT-CCCCCCCC` y se crea un
-`DocumentoFiscal`.
-
-`facturacion/services.py` define la interfaz `ProveedorFacturacionElectronica`
-para integrarse a futuro con el esquema de Documento Tributario Electrónico
-(DTE) del SAR o un proveedor certificado (PAC). Mientras no se contrate un
-proveedor real, se usa `FacturacionMock`, que genera un código de
-verificación de marcador de posición. **Antes de operar en producción**,
-reemplazar `get_proveedor_facturacion_electronica()` por la integración real
-y cargar los CAI vigentes emitidos por el SAR en `RangoAutorizado`.
+- Python 3.11 + Django 5.2
+- SQLite en desarrollo, PostgreSQL en producción (vía `DATABASE_URL`)
+- Bootstrap 5 + Bootstrap Icons (vendorizados localmente, sin depender de un
+  CDN)
 
 ## Instalación
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 
-cp .env.example .env   # ajustar SECRET_KEY, DB, etc.
-
 python manage.py migrate
-python manage.py createsuperuser
+python manage.py seed_groups        # crea los grupos "Administrador" y "Cajero"
+python manage.py createsuperuser    # tu usuario administrador
+python manage.py seed_demo          # datos de ejemplo opcionales (empresa, categorías, productos, clientes)
+
 python manage.py runserver
 ```
 
-Accede a `http://localhost:8000/admin/` para administrar todos los módulos,
-o `http://localhost:8000/` para el dashboard (requiere iniciar sesión en
-`/login/`).
+Luego visita `http://localhost:8000/`, inicia sesión con el usuario creado y
+entra a **Admin → Configuración del negocio** para poner el RTN, CAI y rango
+de facturas reales de tu ferretería.
 
-## Flujo típico
+Para crear un usuario cajero (sin acceso a reportes/configuración), usa
+**Admin → Usuarios** desde el panel, o por línea de comandos:
 
-1. Crear `Sucursal`, `Categoria`, `UnidadMedida` y `Producto` desde el admin.
-2. Cargar `Stock` inicial por producto/sucursal (o vía `OrdenCompra` →
-   acción **"Recibir orden de compra"**, que incrementa el stock
-   automáticamente).
-3. Configurar `Empresa` (datos fiscales) y al menos un `RangoAutorizado`
-   (CAI) por sucursal.
-4. Registrar una `Venta` con sus `DetalleVenta` y usar la acción
-   **"Confirmar venta(s)"**: valida stock, lo descuenta, calcula ISV/total y
-   emite el `DocumentoFiscal` con el siguiente correlativo del CAI.
-5. Revisar el dashboard (`/`) para ventas del día/mes y alertas de stock
-   bajo.
+```bash
+python manage.py shell -c "
+from django.contrib.auth.models import User, Group
+u = User.objects.create_user('cajero1', password='una-contraseña-segura')
+u.groups.add(Group.objects.get(name='Cajero'))
+"
+```
 
 ## Despliegue en Railway + Neon
 
-El repositorio incluye `railway.json` para desplegar el servicio web en
-[Railway](https://railway.app), usando una base de datos PostgreSQL externa
-en [Neon](https://neon.tech) (gratuita) en vez de un plugin de base de datos
-de Railway.
+El repositorio incluye `railway.json` para desplegar en
+[Railway](https://railway.app), usando PostgreSQL externo gratuito en
+[Neon](https://neon.tech) en vez de un plugin de base de datos de Railway.
 
 ### 1. Base de datos en Neon
 
-1. Crea una cuenta en [neon.tech](https://neon.tech) y un proyecto (p. ej.
-   `hardware-store`).
+1. Crea una cuenta en [neon.tech](https://neon.tech) y un proyecto.
 2. En **Connection Details**, copia el connection string (usa el host con
-   `-pooler` para conexiones desde una app web). Tiene esta forma:
-   `postgresql://usuario:password@ep-xxxx-pooler.region.aws.neon.tech/neondb?sslmode=require&channel_binding=require`
-3. Guárdalo solo en el gestor de variables de entorno de Railway (paso
-   siguiente) — nunca lo subas al repo ni lo compartas en texto plano.
+   `-pooler` para conexiones desde una app web).
+3. Guárdalo solo en las variables de entorno de Railway (paso siguiente) —
+   nunca lo subas al repo ni lo compartas en texto plano.
 
 ### 2. Desplegar en Railway
 
 1. En Railway: **New Project** → **Deploy from GitHub repo**, elige este
-   repositorio y la rama `claude/sistema-ferreterias-c9pcst`. Railway detecta
-   `railway.json` y usa Nixpacks para el build de Python.
-2. En el servicio creado, ve a la pestaña **Variables** y define:
-   - `DATABASE_URL`: el connection string de Neon del paso anterior.
-   - `SECRET_KEY`: una clave larga y aleatoria (por ejemplo generada con
-     `python -c "import secrets; print(secrets.token_urlsafe(50))"`).
+   repositorio y la rama a desplegar. Railway detecta `railway.json` y usa
+   Nixpacks para el build de Python.
+2. En **Variables**, define:
+   - `DATABASE_URL`: el connection string de Neon.
+   - `SECRET_KEY`: una clave larga y aleatoria.
    - `DEBUG`: `False`
-   - `ALLOWED_HOSTS`: agrega tu dominio de Railway aquí explícitamente (ver
-     paso 3) — no confíes solo en la variable automática, porque si generas
-     el dominio después del primer deploy, el contenedor ya arrancó sin
-     conocerlo y responde `400 Bad Request` hasta el próximo redeploy.
-   - `CSRF_TRUSTED_ORIGINS`: `https://<tu-dominio>.up.railway.app`
-   - (Opcional) `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_EMAIL`,
-     `DJANGO_SUPERUSER_PASSWORD`: si están definidas, el comando de arranque
-     (`railway.json`) crea ese superusuario automáticamente en cada deploy
-     (se ignora si ya existe). Quita `DJANGO_SUPERUSER_PASSWORD` de las
-     variables una vez confirmes que puedes iniciar sesión, para no dejar la
-     contraseña guardada en texto plano.
-3. En **Settings** → **Networking**, activa **Generate Domain** para obtener
-   una URL pública (`*.up.railway.app`). Copia ese dominio y agrégalo a
-   `ALLOWED_HOSTS`/`CSRF_TRUSTED_ORIGINS` como se indica arriba, luego
-   guarda para forzar un redeploy.
-4. Railway ejecuta el build (`pip install` + `collectstatic`) y el deploy
-   (`migrate`, crear superusuario si aplica, y `gunicorn`) definidos en
-   `railway.json`.
-5. Carga los datos base (sucursales, CAI, productos) desde `/admin/` en tu
-   dominio de Railway.
+   - `ALLOWED_HOSTS`: tu dominio de Railway (ver paso 3), separado por comas
+     junto con `localhost,127.0.0.1`.
+   - `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_PASSWORD`,
+     `DJANGO_SUPERUSER_EMAIL`: crean el superusuario automáticamente en el
+     arranque (`ensure_admin`), sin necesidad de shell interactivo.
+   - (Opcional) `SEED_DEMO=true` para cargar datos de ejemplo la primera vez.
+3. En **Settings → Networking**, activa **Generate Domain**. Copia ese
+   dominio y agrégalo a `ALLOWED_HOSTS` (con esquema `https://` no hace
+   falta, `settings.py` ya arma `CSRF_TRUSTED_ORIGINS` a partir de
+   `ALLOWED_HOSTS`), luego guarda para forzar un redeploy.
+4. El arranque corre `migrate`, `seed_groups`, `ensure_admin` y (si aplica)
+   `seed_demo` antes de levantar `gunicorn`.
+5. Entra a **Admin → Configuración del negocio** y reemplaza los datos de
+   ejemplo con el RTN, CAI y rango de facturas reales de tu ferretería antes
+   de facturar en producción.
 
-### Notas importantes para producción
+## Estructura del proyecto
 
-- **Archivos subidos (imágenes de producto):** el sistema de archivos del
-  servicio es efímero — las imágenes subidas vía `Producto.imagen` se
-  pierden en cada deploy. Para producción, monta un
-  [volumen de Railway](https://docs.railway.app/reference/volumes) en
-  `MEDIA_ROOT` o cambia `MEDIA` a un backend como S3 (`django-storages`).
-- **Facturación electrónica:** sigue usando `FacturacionMock` (ver sección
-  anterior) hasta integrar un proveedor certificado del SAR.
-- El connection string de Neon incluye el password de la base de datos:
-  trátalo como secreto (solo en variables de entorno de Railway, nunca en
-  commits, capturas o chats) y rótalo si llega a exponerse.
+- `config/` – configuración del proyecto Django (settings, urls).
+- `core/` – panel principal (dashboard), configuración fiscal del negocio
+  (`Company`), roles/permisos, comandos `seed_demo`/`seed_groups`/`ensure_admin`.
+- `inventory/` – categorías, proveedores, productos y movimientos de
+  inventario.
+- `clients/` – clientes.
+- `sales/` – punto de venta, caja, facturas, notas de crédito.
+- `reports/` – reportes de ventas, productos top, ganancias, stock bajo,
+  impuestos y flujo de caja.
 
-## Pendiente / próximos pasos sugeridos
+## Notas
 
-- Interfaz POS dedicada (hoy la carga de ventas se hace vía Django Admin).
-- Integración real con un proveedor de facturación electrónica certificado
-  por el SAR cuando el negocio lo contrate.
-- Reportes más completos (ventas por vendedor/sucursal, rotación de
-  inventario, cuentas por cobrar de clientes a crédito).
-- Permisos granulares por rol (actualmente `rol` es informativo; falta
-  restringir vistas/acciones del admin según rol).
+- **Eliminar una factura ya emitida rompe la secuencia correlativa
+  autorizada por el CAI y normalmente no es válido ante el SAR** — lo
+  correcto fiscalmente es anular, no eliminar.
+- El régimen CFE (Factura Electrónica) usa por ahora una numeración interna
+  simple; la integración real con el webservice del SAR para timbrado
+  electrónico **no está implementada** — requiere las especificaciones
+  técnicas del SAR y el certificado/credenciales del negocio.
+- La base de datos por defecto es SQLite (`db.sqlite3`) para desarrollo. En
+  producción se usa PostgreSQL vía `DATABASE_URL`.
+- La impresión funciona a través del diálogo de impresión del navegador
+  hacia la impresora instalada en el sistema operativo — no requiere
+  hardware especial ni drivers propios, pero sí que la impresora esté
+  correctamente instalada.
+- Pendiente para una próxima fase: órdenes de compra y cuentas por pagar a
+  proveedores, crédito/fiado a clientes, modo offline con sincronización, e
+  integración directa con hardware (impresión ESC/POS por USB).
