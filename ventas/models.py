@@ -18,18 +18,24 @@ class Venta(models.Model):
 
     cliente = models.ForeignKey(
         "clientes.Cliente", on_delete=models.PROTECT, null=True, blank=True, related_name="ventas",
-        help_text="Vacío = consumidor final",
+        verbose_name="cliente", help_text="Vacío = consumidor final",
     )
-    sucursal = models.ForeignKey("sucursales.Sucursal", on_delete=models.PROTECT, related_name="ventas")
-    vendedor = models.ForeignKey("usuarios.Usuario", on_delete=models.PROTECT, related_name="ventas")
-    forma_pago = models.CharField(max_length=15, choices=FormaPago.choices, default=FormaPago.CONTADO)
-    estado = models.CharField(max_length=12, choices=Estado.choices, default=Estado.BORRADOR)
-    descuento = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    total_isv = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    fecha = models.DateTimeField(auto_now_add=True)
-    fecha_anulacion = models.DateTimeField(null=True, blank=True)
+    sucursal = models.ForeignKey(
+        "sucursales.Sucursal", on_delete=models.PROTECT, related_name="ventas", verbose_name="sucursal"
+    )
+    vendedor = models.ForeignKey(
+        "usuarios.Usuario", on_delete=models.PROTECT, related_name="ventas", verbose_name="vendedor"
+    )
+    forma_pago = models.CharField(
+        "forma de pago", max_length=15, choices=FormaPago.choices, default=FormaPago.CONTADO
+    )
+    estado = models.CharField("estado", max_length=12, choices=Estado.choices, default=Estado.BORRADOR)
+    descuento = models.DecimalField("descuento", max_digits=12, decimal_places=2, default=0)
+    subtotal = models.DecimalField("subtotal", max_digits=12, decimal_places=2, default=0)
+    total_isv = models.DecimalField("ISV total", max_digits=12, decimal_places=2, default=0)
+    total = models.DecimalField("total", max_digits=12, decimal_places=2, default=0)
+    fecha = models.DateTimeField("fecha", auto_now_add=True)
+    fecha_anulacion = models.DateTimeField("fecha de anulación", null=True, blank=True)
 
     class Meta:
         ordering = ["-fecha"]
@@ -137,15 +143,16 @@ class Venta(models.Model):
 
 
 class DetalleVenta(models.Model):
-    venta = models.ForeignKey(Venta, on_delete=models.CASCADE, related_name="detalles")
-    producto = models.ForeignKey("inventario.Producto", on_delete=models.PROTECT)
-    cantidad = models.DecimalField(max_digits=12, decimal_places=2)
+    venta = models.ForeignKey(Venta, on_delete=models.CASCADE, related_name="detalles", verbose_name="venta")
+    producto = models.ForeignKey("inventario.Producto", on_delete=models.PROTECT, verbose_name="producto")
+    cantidad = models.DecimalField("cantidad", max_digits=12, decimal_places=2)
     precio_unitario = models.DecimalField(
+        "precio unitario",
         max_digits=12, decimal_places=4, blank=True,
         help_text="Se autocompleta con el precio de venta del producto si se deja en 0.",
     )
-    porcentaje_isv = models.DecimalField(max_digits=5, decimal_places=2, blank=True)
-    descuento = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    porcentaje_isv = models.DecimalField("% ISV", max_digits=5, decimal_places=2, blank=True)
+    descuento = models.DecimalField("descuento", max_digits=12, decimal_places=2, default=0)
 
     class Meta:
         verbose_name = "Detalle de venta"
@@ -171,13 +178,17 @@ class CierreCaja(models.Model):
         ABIERTA = "ABIERTA", "Abierta"
         CERRADA = "CERRADA", "Cerrada"
 
-    sucursal = models.ForeignKey("sucursales.Sucursal", on_delete=models.PROTECT, related_name="cierres_caja")
-    usuario = models.ForeignKey("usuarios.Usuario", on_delete=models.PROTECT, related_name="cierres_caja")
-    estado = models.CharField(max_length=10, choices=Estado.choices, default=Estado.ABIERTA)
-    monto_inicial = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    monto_final = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
-    fecha_apertura = models.DateTimeField(auto_now_add=True)
-    fecha_cierre = models.DateTimeField(null=True, blank=True)
+    sucursal = models.ForeignKey(
+        "sucursales.Sucursal", on_delete=models.PROTECT, related_name="cierres_caja", verbose_name="sucursal"
+    )
+    usuario = models.ForeignKey(
+        "usuarios.Usuario", on_delete=models.PROTECT, related_name="cierres_caja", verbose_name="usuario"
+    )
+    estado = models.CharField("estado", max_length=10, choices=Estado.choices, default=Estado.ABIERTA)
+    monto_inicial = models.DecimalField("monto inicial", max_digits=12, decimal_places=2, default=0)
+    monto_final = models.DecimalField("monto final", max_digits=12, decimal_places=2, null=True, blank=True)
+    fecha_apertura = models.DateTimeField("fecha de apertura", auto_now_add=True)
+    fecha_cierre = models.DateTimeField("fecha de cierre", null=True, blank=True)
 
     class Meta:
         ordering = ["-fecha_apertura"]

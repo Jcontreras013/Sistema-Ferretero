@@ -6,12 +6,12 @@ from django.utils import timezone
 class Empresa(models.Model):
     """Configuración fiscal de la empresa emisora (Honduras - SAR)."""
 
-    razon_social = models.CharField(max_length=200)
-    nombre_comercial = models.CharField(max_length=200, blank=True)
-    rtn = models.CharField(max_length=14, help_text="RTN de la empresa (13-14 dígitos)")
-    direccion = models.CharField(max_length=255, blank=True)
-    telefono = models.CharField(max_length=20, blank=True)
-    email = models.EmailField(blank=True)
+    razon_social = models.CharField("razón social", max_length=200)
+    nombre_comercial = models.CharField("nombre comercial", max_length=200, blank=True)
+    rtn = models.CharField("RTN", max_length=14, help_text="RTN de la empresa (13-14 dígitos)")
+    direccion = models.CharField("dirección", max_length=255, blank=True)
+    telefono = models.CharField("teléfono", max_length=20, blank=True)
+    email = models.EmailField("correo electrónico", blank=True)
 
     class Meta:
         verbose_name = "Empresa"
@@ -36,18 +36,21 @@ class RangoAutorizado(models.Model):
         NOTA_DEBITO = "03", "Nota de débito"
 
     sucursal = models.ForeignKey(
-        "sucursales.Sucursal", on_delete=models.PROTECT, related_name="rangos_autorizados"
+        "sucursales.Sucursal", on_delete=models.PROTECT, related_name="rangos_autorizados",
+        verbose_name="sucursal",
     )
     cai = models.CharField(
-        max_length=50, help_text="Código de Autorización de Impresión emitido por el SAR"
+        "CAI", max_length=50, help_text="Código de Autorización de Impresión emitido por el SAR"
     )
-    punto_emision = models.CharField(max_length=3, default="001")
-    tipo_documento = models.CharField(max_length=2, choices=TipoDocumento.choices, default=TipoDocumento.FACTURA)
-    rango_inicial = models.PositiveIntegerField()
-    rango_final = models.PositiveIntegerField()
-    numero_actual = models.PositiveIntegerField(help_text="Próximo correlativo a emitir")
-    fecha_limite_emision = models.DateField()
-    activo = models.BooleanField(default=True)
+    punto_emision = models.CharField("punto de emisión", max_length=3, default="001")
+    tipo_documento = models.CharField(
+        "tipo de documento", max_length=2, choices=TipoDocumento.choices, default=TipoDocumento.FACTURA
+    )
+    rango_inicial = models.PositiveIntegerField("rango inicial")
+    rango_final = models.PositiveIntegerField("rango final")
+    numero_actual = models.PositiveIntegerField("número actual", help_text="Próximo correlativo a emitir")
+    fecha_limite_emision = models.DateField("fecha límite de emisión")
+    activo = models.BooleanField("activo", default=True)
 
     class Meta:
         verbose_name = "Rango autorizado (CAI)"
@@ -91,23 +94,28 @@ class DocumentoFiscal(models.Model):
         ANULADA = "ANULADA", "Anulada"
 
     venta = models.OneToOneField(
-        "ventas.Venta", on_delete=models.PROTECT, related_name="documento_fiscal"
+        "ventas.Venta", on_delete=models.PROTECT, related_name="documento_fiscal", verbose_name="venta"
     )
-    rango = models.ForeignKey(RangoAutorizado, on_delete=models.PROTECT, related_name="documentos")
-    numero_documento = models.CharField(max_length=30, unique=True)
-    tipo_documento = models.CharField(max_length=2, choices=RangoAutorizado.TipoDocumento.choices)
-    rtn_receptor = models.CharField(max_length=14, blank=True)
-    nombre_receptor = models.CharField(max_length=200, blank=True)
-    subtotal = models.DecimalField(max_digits=12, decimal_places=2)
-    total_isv = models.DecimalField(max_digits=12, decimal_places=2)
-    total = models.DecimalField(max_digits=12, decimal_places=2)
-    estado = models.CharField(max_length=10, choices=Estado.choices, default=Estado.EMITIDA)
+    rango = models.ForeignKey(
+        RangoAutorizado, on_delete=models.PROTECT, related_name="documentos", verbose_name="rango autorizado"
+    )
+    numero_documento = models.CharField("número de documento", max_length=30, unique=True)
+    tipo_documento = models.CharField(
+        "tipo de documento", max_length=2, choices=RangoAutorizado.TipoDocumento.choices
+    )
+    rtn_receptor = models.CharField("RTN del receptor", max_length=14, blank=True)
+    nombre_receptor = models.CharField("nombre del receptor", max_length=200, blank=True)
+    subtotal = models.DecimalField("subtotal", max_digits=12, decimal_places=2)
+    total_isv = models.DecimalField("ISV total", max_digits=12, decimal_places=2)
+    total = models.DecimalField("total", max_digits=12, decimal_places=2)
+    estado = models.CharField("estado", max_length=10, choices=Estado.choices, default=Estado.EMITIDA)
     codigo_verificacion = models.CharField(
+        "código de verificación",
         max_length=100, blank=True,
         help_text="Código de verificación del proveedor de facturación electrónica (DTE), si aplica.",
     )
-    fecha_emision = models.DateTimeField(auto_now_add=True)
-    fecha_anulacion = models.DateTimeField(null=True, blank=True)
+    fecha_emision = models.DateTimeField("fecha de emisión", auto_now_add=True)
+    fecha_anulacion = models.DateTimeField("fecha de anulación", null=True, blank=True)
 
     class Meta:
         verbose_name = "Documento fiscal"

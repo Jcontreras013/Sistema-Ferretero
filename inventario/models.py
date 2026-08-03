@@ -5,8 +5,8 @@ from django.db import models
 
 
 class Categoria(models.Model):
-    nombre = models.CharField(max_length=100, unique=True)
-    descripcion = models.CharField(max_length=255, blank=True)
+    nombre = models.CharField("nombre", max_length=100, unique=True)
+    descripcion = models.CharField("descripción", max_length=255, blank=True)
 
     class Meta:
         ordering = ["nombre"]
@@ -17,8 +17,8 @@ class Categoria(models.Model):
 
 
 class UnidadMedida(models.Model):
-    nombre = models.CharField(max_length=50, unique=True)
-    abreviatura = models.CharField(max_length=10, unique=True)
+    nombre = models.CharField("nombre", max_length=50, unique=True)
+    abreviatura = models.CharField("abreviatura", max_length=10, unique=True)
 
     class Meta:
         verbose_name = "Unidad de medida"
@@ -32,27 +32,33 @@ class Producto(models.Model):
     ISV_GENERAL = Decimal("15.00")
     ISV_EXENTO = Decimal("0.00")
 
-    codigo = models.CharField(max_length=30, unique=True, help_text="SKU interno")
-    codigo_barras = models.CharField(max_length=50, blank=True, db_index=True)
-    nombre = models.CharField(max_length=200)
-    descripcion = models.TextField(blank=True)
-    marca = models.CharField(max_length=100, blank=True)
-    categoria = models.ForeignKey(Categoria, on_delete=models.PROTECT, related_name="productos")
-    unidad_medida = models.ForeignKey(UnidadMedida, on_delete=models.PROTECT, related_name="productos")
-    precio_compra = models.DecimalField(max_digits=12, decimal_places=4, default=0)
-    precio_venta = models.DecimalField(max_digits=12, decimal_places=4)
+    codigo = models.CharField("código", max_length=30, unique=True, help_text="SKU interno")
+    codigo_barras = models.CharField("código de barras", max_length=50, blank=True, db_index=True)
+    nombre = models.CharField("nombre", max_length=200)
+    descripcion = models.TextField("descripción", blank=True)
+    marca = models.CharField("marca", max_length=100, blank=True)
+    categoria = models.ForeignKey(
+        Categoria, on_delete=models.PROTECT, related_name="productos", verbose_name="categoría"
+    )
+    unidad_medida = models.ForeignKey(
+        UnidadMedida, on_delete=models.PROTECT, related_name="productos", verbose_name="unidad de medida"
+    )
+    precio_compra = models.DecimalField("precio de compra", max_digits=12, decimal_places=4, default=0)
+    precio_venta = models.DecimalField("precio de venta", max_digits=12, decimal_places=4)
     porcentaje_isv = models.DecimalField(
+        "% ISV",
         max_digits=5, decimal_places=2, default=ISV_GENERAL,
         help_text="ISV Honduras: 15% general, 18% bebidas/tabaco, 0% exento",
     )
-    stock_minimo = models.PositiveIntegerField(default=0)
-    imagen = models.ImageField(upload_to="productos/", blank=True, null=True)
+    stock_minimo = models.PositiveIntegerField("stock mínimo", default=0)
+    imagen = models.ImageField("imagen", upload_to="productos/", blank=True, null=True)
     proveedor_principal = models.ForeignKey(
-        "compras.Proveedor", on_delete=models.SET_NULL, null=True, blank=True, related_name="productos"
+        "compras.Proveedor", on_delete=models.SET_NULL, null=True, blank=True, related_name="productos",
+        verbose_name="proveedor principal",
     )
-    activo = models.BooleanField(default=True)
-    creado = models.DateTimeField(auto_now_add=True)
-    actualizado = models.DateTimeField(auto_now=True)
+    activo = models.BooleanField("activo", default=True)
+    creado = models.DateTimeField("fecha de creación", auto_now_add=True)
+    actualizado = models.DateTimeField("última actualización", auto_now=True)
 
     class Meta:
         ordering = ["nombre"]
@@ -69,10 +75,12 @@ class Producto(models.Model):
 
 
 class Stock(models.Model):
-    producto = models.ForeignKey(Producto, on_delete=models.CASCADE, related_name="stocks")
-    sucursal = models.ForeignKey("sucursales.Sucursal", on_delete=models.CASCADE, related_name="stocks")
-    cantidad = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    actualizado = models.DateTimeField(auto_now=True)
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE, related_name="stocks", verbose_name="producto")
+    sucursal = models.ForeignKey(
+        "sucursales.Sucursal", on_delete=models.CASCADE, related_name="stocks", verbose_name="sucursal"
+    )
+    cantidad = models.DecimalField("cantidad", max_digits=12, decimal_places=2, default=0)
+    actualizado = models.DateTimeField("última actualización", auto_now=True)
 
     class Meta:
         unique_together = ("producto", "sucursal")
@@ -94,18 +102,23 @@ class MovimientoInventario(models.Model):
         TRANSFERENCIA_SALIDA = "TRANS_OUT", "Transferencia - salida"
         TRANSFERENCIA_ENTRADA = "TRANS_IN", "Transferencia - entrada"
 
-    producto = models.ForeignKey(Producto, on_delete=models.PROTECT, related_name="movimientos")
-    sucursal = models.ForeignKey("sucursales.Sucursal", on_delete=models.PROTECT, related_name="movimientos")
-    tipo = models.CharField(max_length=15, choices=Tipo.choices)
-    cantidad = models.DecimalField(max_digits=12, decimal_places=2)
-    motivo = models.CharField(max_length=255, blank=True)
+    producto = models.ForeignKey(
+        Producto, on_delete=models.PROTECT, related_name="movimientos", verbose_name="producto"
+    )
+    sucursal = models.ForeignKey(
+        "sucursales.Sucursal", on_delete=models.PROTECT, related_name="movimientos", verbose_name="sucursal"
+    )
+    tipo = models.CharField("tipo de movimiento", max_length=15, choices=Tipo.choices)
+    cantidad = models.DecimalField("cantidad", max_digits=12, decimal_places=2)
+    motivo = models.CharField("motivo", max_length=255, blank=True)
     referencia = models.CharField(
-        max_length=100, blank=True, help_text="Ej: Venta #123, Orden de compra #45"
+        "referencia", max_length=100, blank=True, help_text="Ej: Venta #123, Orden de compra #45"
     )
     usuario = models.ForeignKey(
-        "usuarios.Usuario", on_delete=models.SET_NULL, null=True, related_name="movimientos_inventario"
+        "usuarios.Usuario", on_delete=models.SET_NULL, null=True, related_name="movimientos_inventario",
+        verbose_name="usuario",
     )
-    fecha = models.DateTimeField(auto_now_add=True)
+    fecha = models.DateTimeField("fecha", auto_now_add=True)
 
     class Meta:
         ordering = ["-fecha"]
@@ -122,18 +135,24 @@ class TransferenciaInventario(models.Model):
         COMPLETADA = "COMPLETADA", "Completada"
         CANCELADA = "CANCELADA", "Cancelada"
 
-    producto = models.ForeignKey(Producto, on_delete=models.PROTECT, related_name="transferencias")
+    producto = models.ForeignKey(
+        Producto, on_delete=models.PROTECT, related_name="transferencias", verbose_name="producto"
+    )
     sucursal_origen = models.ForeignKey(
-        "sucursales.Sucursal", on_delete=models.PROTECT, related_name="transferencias_salientes"
+        "sucursales.Sucursal", on_delete=models.PROTECT, related_name="transferencias_salientes",
+        verbose_name="sucursal origen",
     )
     sucursal_destino = models.ForeignKey(
-        "sucursales.Sucursal", on_delete=models.PROTECT, related_name="transferencias_entrantes"
+        "sucursales.Sucursal", on_delete=models.PROTECT, related_name="transferencias_entrantes",
+        verbose_name="sucursal destino",
     )
-    cantidad = models.DecimalField(max_digits=12, decimal_places=2)
-    estado = models.CharField(max_length=15, choices=Estado.choices, default=Estado.PENDIENTE)
-    usuario = models.ForeignKey("usuarios.Usuario", on_delete=models.SET_NULL, null=True)
-    fecha_solicitud = models.DateTimeField(auto_now_add=True)
-    fecha_completada = models.DateTimeField(null=True, blank=True)
+    cantidad = models.DecimalField("cantidad", max_digits=12, decimal_places=2)
+    estado = models.CharField("estado", max_length=15, choices=Estado.choices, default=Estado.PENDIENTE)
+    usuario = models.ForeignKey(
+        "usuarios.Usuario", on_delete=models.SET_NULL, null=True, verbose_name="usuario"
+    )
+    fecha_solicitud = models.DateTimeField("fecha de solicitud", auto_now_add=True)
+    fecha_completada = models.DateTimeField("fecha completada", null=True, blank=True)
 
     class Meta:
         ordering = ["-fecha_solicitud"]

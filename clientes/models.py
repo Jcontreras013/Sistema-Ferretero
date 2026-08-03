@@ -6,18 +6,19 @@ class Cliente(models.Model):
         NATURAL = "NATURAL", "Persona natural"
         JURIDICO = "JURIDICO", "Persona jurídica"
 
-    tipo = models.CharField(max_length=10, choices=Tipo.choices, default=Tipo.NATURAL)
-    nombre = models.CharField(max_length=200, help_text="Nombre completo o razón social")
+    tipo = models.CharField("tipo de cliente", max_length=10, choices=Tipo.choices, default=Tipo.NATURAL)
+    nombre = models.CharField("nombre", max_length=200, help_text="Nombre completo o razón social")
     rtn = models.CharField(
+        "RTN",
         max_length=14, blank=True, db_index=True,
         help_text="Registro Tributario Nacional (13-14 dígitos). Vacío = consumidor final.",
     )
-    telefono = models.CharField(max_length=20, blank=True)
-    email = models.EmailField(blank=True)
-    direccion = models.CharField(max_length=255, blank=True)
-    limite_credito = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    activo = models.BooleanField(default=True)
-    creado = models.DateTimeField(auto_now_add=True)
+    telefono = models.CharField("teléfono", max_length=20, blank=True)
+    email = models.EmailField("correo electrónico", blank=True)
+    direccion = models.CharField("dirección", max_length=255, blank=True)
+    limite_credito = models.DecimalField("límite de crédito", max_digits=12, decimal_places=2, default=0)
+    activo = models.BooleanField("activo", default=True)
+    creado = models.DateTimeField("fecha de registro", auto_now_add=True)
 
     class Meta:
         ordering = ["nombre"]

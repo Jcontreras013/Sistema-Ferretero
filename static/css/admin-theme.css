@@ -20,11 +20,12 @@ html[data-theme="light"] {
   --link-hover-color: #f97316;
   --link-selected-fg: #c2410c;
 
-  --button-fg: #111827;
-  --button-bg: #f97316;
-  --button-hover-bg: #c2410c;
-  --default-button-bg: #1f2937;
-  --default-button-hover-bg: #111827;
+  /* Botones secundarios (oscuros) vs. el botón de acción principal (naranja) */
+  --button-fg: #fff;
+  --button-bg: #1f2937;
+  --button-hover-bg: #111827;
+  --default-button-bg: #f97316;
+  --default-button-hover-bg: #c2410c;
 
   --object-tools-fg: #111827;
   --object-tools-bg: #f97316;
@@ -51,11 +52,11 @@ html[data-theme="light"] {
     --link-hover-color: #f97316;
     --link-selected-fg: #fb923c;
 
-    --button-fg: #111827;
-    --button-bg: #f97316;
-    --button-hover-bg: #fb923c;
-    --default-button-bg: #1f2937;
-    --default-button-hover-bg: #374151;
+    --button-fg: #f3f4f6;
+    --button-bg: #1f2937;
+    --button-hover-bg: #374151;
+    --default-button-bg: #f97316;
+    --default-button-hover-bg: #fb923c;
 
     --object-tools-fg: #111827;
     --object-tools-bg: #f97316;
@@ -82,11 +83,11 @@ html[data-theme="dark"] {
   --link-hover-color: #f97316;
   --link-selected-fg: #fb923c;
 
-  --button-fg: #111827;
-  --button-bg: #f97316;
-  --button-hover-bg: #fb923c;
-  --default-button-bg: #1f2937;
-  --default-button-hover-bg: #374151;
+  --button-fg: #f3f4f6;
+  --button-bg: #1f2937;
+  --button-hover-bg: #374151;
+  --default-button-bg: #f97316;
+  --default-button-hover-bg: #fb923c;
 
   --object-tools-fg: #111827;
   --object-tools-bg: #f97316;
@@ -124,10 +125,137 @@ div.breadcrumbs {
   font-size: 0.8rem;
 }
 
-.module h2, .module caption, .inline-group h2 {
-  border-radius: 6px 6px 0 0;
-}
+/* ---------- Botones ---------- */
 
 .button, input[type=submit], input[type=button], .submit-row input, a.button {
   border-radius: 8px;
+  font-weight: 600;
+  transition: background-color 0.15s ease;
+}
+
+.submit-row input.default {
+  order: -1;
+}
+
+/* ---------- Página de inicio: tarjetas por app ---------- */
+/* Django limita ".dashboard #content" a 600px con un layout de floats;
+   lo liberamos para poder mostrar los módulos en una cuadrícula real. */
+
+.dashboard #content {
+  width: 100%;
+  max-width: 1400px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1.5rem;
+}
+
+.dashboard #content-related {
+  float: none;
+  position: static;
+  margin: 0;
+  width: 300px;
+  flex: 0 0 300px;
+  order: 2;
+}
+
+.dashboard #content-main {
+  float: none;
+  flex: 1 1 480px;
+  order: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.dashboard #content > h1 {
+  flex: 1 0 100%;
+  order: 0;
+}
+
+.module {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(17, 24, 39, 0.08);
+  border: 1px solid var(--hairline-color);
+}
+
+.module h2, .module caption, .inline-group h2 {
+  border-radius: 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 0.7rem 1rem;
+}
+
+.module table {
+  border-radius: 0 0 12px 12px;
+  overflow: hidden;
+}
+
+/* ---------- Listas de resultados ---------- */
+
+#changelist {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(17, 24, 39, 0.08);
+}
+
+#changelist-filter {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(17, 24, 39, 0.08);
+}
+
+#changelist-filter h2 {
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+/* ---------- Formularios ---------- */
+
+fieldset.module {
+  margin-bottom: 1.25rem;
+}
+
+input[type=text], input[type=password], input[type=email], input[type=url],
+input[type=number], input[type=tel], textarea, select, .vTextField {
+  border-radius: 8px !important;
+  border: 1px solid var(--border-color);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input[type=text]:focus, input[type=password]:focus, input[type=email]:focus,
+input[type=number]:focus, textarea:focus, select:focus, .vTextField:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
+  outline: none;
+}
+
+.submit-row {
+  border-radius: 12px;
+}
+
+/* ---------- Mensajes ---------- */
+
+ul.messagelist li {
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+/* ---------- Paginación ---------- */
+
+.paginator {
+  border-radius: 0 0 12px 12px;
+}
+
+.paginator a:link, .paginator a:visited {
+  border-radius: 6px;
+}
+
+.paginator .this-page {
+  border-radius: 6px;
+  font-weight: 700;
 }

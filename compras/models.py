@@ -3,13 +3,13 @@ from django.db import models
 
 
 class Proveedor(models.Model):
-    nombre = models.CharField(max_length=200)
-    rtn = models.CharField(max_length=14, blank=True)
-    contacto = models.CharField(max_length=150, blank=True)
-    telefono = models.CharField(max_length=20, blank=True)
-    email = models.EmailField(blank=True)
-    direccion = models.CharField(max_length=255, blank=True)
-    activo = models.BooleanField(default=True)
+    nombre = models.CharField("nombre", max_length=200)
+    rtn = models.CharField("RTN", max_length=14, blank=True)
+    contacto = models.CharField("contacto", max_length=150, blank=True)
+    telefono = models.CharField("teléfono", max_length=20, blank=True)
+    email = models.EmailField("correo electrónico", blank=True)
+    direccion = models.CharField("dirección", max_length=255, blank=True)
+    activo = models.BooleanField("activo", default=True)
 
     class Meta:
         ordering = ["nombre"]
@@ -24,13 +24,19 @@ class OrdenCompra(models.Model):
         RECIBIDA = "RECIBIDA", "Recibida"
         CANCELADA = "CANCELADA", "Cancelada"
 
-    proveedor = models.ForeignKey(Proveedor, on_delete=models.PROTECT, related_name="ordenes_compra")
-    sucursal = models.ForeignKey("sucursales.Sucursal", on_delete=models.PROTECT, related_name="ordenes_compra")
-    estado = models.CharField(max_length=15, choices=Estado.choices, default=Estado.PENDIENTE)
-    usuario = models.ForeignKey("usuarios.Usuario", on_delete=models.SET_NULL, null=True)
-    fecha = models.DateTimeField(auto_now_add=True)
-    fecha_recepcion = models.DateTimeField(null=True, blank=True)
-    notas = models.TextField(blank=True)
+    proveedor = models.ForeignKey(
+        Proveedor, on_delete=models.PROTECT, related_name="ordenes_compra", verbose_name="proveedor"
+    )
+    sucursal = models.ForeignKey(
+        "sucursales.Sucursal", on_delete=models.PROTECT, related_name="ordenes_compra", verbose_name="sucursal"
+    )
+    estado = models.CharField("estado", max_length=15, choices=Estado.choices, default=Estado.PENDIENTE)
+    usuario = models.ForeignKey(
+        "usuarios.Usuario", on_delete=models.SET_NULL, null=True, verbose_name="usuario"
+    )
+    fecha = models.DateTimeField("fecha", auto_now_add=True)
+    fecha_recepcion = models.DateTimeField("fecha de recepción", null=True, blank=True)
+    notas = models.TextField("notas", blank=True)
 
     class Meta:
         ordering = ["-fecha"]
@@ -69,10 +75,10 @@ class OrdenCompra(models.Model):
 
 
 class DetalleOrdenCompra(models.Model):
-    orden = models.ForeignKey(OrdenCompra, on_delete=models.CASCADE, related_name="detalles")
-    producto = models.ForeignKey("inventario.Producto", on_delete=models.PROTECT)
-    cantidad = models.DecimalField(max_digits=12, decimal_places=2)
-    precio_unitario = models.DecimalField(max_digits=12, decimal_places=4)
+    orden = models.ForeignKey(OrdenCompra, on_delete=models.CASCADE, related_name="detalles", verbose_name="orden")
+    producto = models.ForeignKey("inventario.Producto", on_delete=models.PROTECT, verbose_name="producto")
+    cantidad = models.DecimalField("cantidad", max_digits=12, decimal_places=2)
+    precio_unitario = models.DecimalField("precio unitario", max_digits=12, decimal_places=4)
 
     class Meta:
         verbose_name = "Detalle de orden de compra"
