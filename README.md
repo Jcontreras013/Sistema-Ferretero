@@ -99,15 +99,24 @@ de Railway.
    - `SECRET_KEY`: una clave larga y aleatoria (por ejemplo generada con
      `python -c "import secrets; print(secrets.token_urlsafe(50))"`).
    - `DEBUG`: `False`
+   - `ALLOWED_HOSTS`: agrega tu dominio de Railway aquí explícitamente (ver
+     paso 3) — no confíes solo en la variable automática, porque si generas
+     el dominio después del primer deploy, el contenedor ya arrancó sin
+     conocerlo y responde `400 Bad Request` hasta el próximo redeploy.
+   - `CSRF_TRUSTED_ORIGINS`: `https://<tu-dominio>.up.railway.app`
    - (Opcional) `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_EMAIL`,
-     `DJANGO_SUPERUSER_PASSWORD` si quieres crear el superusuario a mano
-     luego con `railway run python manage.py createsuperuser`.
+     `DJANGO_SUPERUSER_PASSWORD`: si están definidas, el comando de arranque
+     (`railway.json`) crea ese superusuario automáticamente en cada deploy
+     (se ignora si ya existe). Quita `DJANGO_SUPERUSER_PASSWORD` de las
+     variables una vez confirmes que puedes iniciar sesión, para no dejar la
+     contraseña guardada en texto plano.
 3. En **Settings** → **Networking**, activa **Generate Domain** para obtener
-   una URL pública (`*.up.railway.app`). Railway expone esa URL en la
-   variable `RAILWAY_PUBLIC_DOMAIN`, que `settings.py` ya agrega
-   automáticamente a `ALLOWED_HOSTS`/`CSRF_TRUSTED_ORIGINS`.
+   una URL pública (`*.up.railway.app`). Copia ese dominio y agrégalo a
+   `ALLOWED_HOSTS`/`CSRF_TRUSTED_ORIGINS` como se indica arriba, luego
+   guarda para forzar un redeploy.
 4. Railway ejecuta el build (`pip install` + `collectstatic`) y el deploy
-   (`migrate` + `gunicorn`) definidos en `railway.json`.
+   (`migrate`, crear superusuario si aplica, y `gunicorn`) definidos en
+   `railway.json`.
 5. Carga los datos base (sucursales, CAI, productos) desde `/admin/` en tu
    dominio de Railway.
 
