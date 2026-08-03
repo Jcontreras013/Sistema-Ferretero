@@ -1,31 +1,59 @@
-{% extends "base.html" %}
-{% block title %}Iniciar sesión{% endblock %}
-{% block content %}
-<div class="row justify-content-center mt-5">
-    <div class="col-md-4">
-        <div class="card p-4">
-            <div class="text-center mb-3">
-                <i class="bi bi-tools" style="font-size: 2.5rem;"></i>
-                <h4 class="mt-2">Sistema Ferretero</h4>
-                <p class="text-muted">Facturación</p>
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ingresar · Sistema Ferretero</title>
+    <link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'vendor/bootstrap-icons/bootstrap-icons.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/styles.css' %}" rel="stylesheet">
+</head>
+<body>
+    <div class="auth-shell">
+        <div class="auth-hero">
+            <div class="brand-icon"><i class="bi bi-tools"></i></div>
+            <h2>Sistema Ferretero</h2>
+            <p>Controla inventario, ventas, caja y facturación de tu ferretería desde
+               un solo lugar.</p>
+            <div class="feature-list">
+                <div><i class="bi bi-check-circle-fill"></i> Punto de venta con descuento de stock automático</div>
+                <div><i class="bi bi-check-circle-fill"></i> Caja con apertura/cierre y arqueo</div>
+                <div><i class="bi bi-check-circle-fill"></i> Facturación fiscal conforme al SAR (Honduras)</div>
+                <div><i class="bi bi-check-circle-fill"></i> Reportes de ventas, ISV y alertas de stock bajo</div>
             </div>
-            {% if form.errors %}
-                <div class="alert alert-danger">Usuario o contraseña incorrectos.</div>
-            {% endif %}
-            <form method="post">
-                {% csrf_token %}
-                <div class="mb-3">
-                    <label class="form-label">Usuario</label>
-                    <input type="text" name="username" class="form-control" required autofocus>
+        </div>
+        <div class="auth-form-side">
+            <div class="auth-card">
+                <div class="text-center mb-4 d-md-none">
+                    <div class="brand-icon mx-auto">
+                        <i class="bi bi-tools"></i>
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Contraseña</label>
-                    <input type="password" name="password" class="form-control" required>
-                </div>
-                <input type="hidden" name="next" value="{{ next }}">
-                <button type="submit" class="btn btn-primary w-100">Ingresar</button>
-            </form>
+                <h1 class="h4 mb-1 fw-bold">Bienvenido de nuevo</h1>
+                <p class="text-muted mb-4">Inicia sesión para continuar</p>
+
+                {% if form.errors %}
+                    <div class="alert alert-danger py-2">Usuario o contraseña incorrectos.</div>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Usuario</label>
+                        <input type="text" name="username" class="form-control" required autofocus>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Contraseña</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+                    <input type="hidden" name="next" value="{{ next }}">
+                    <button class="btn btn-brand w-100 py-2 mt-2" type="submit">
+                        Ingresar <i class="bi bi-arrow-right ms-1"></i>
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
-</div>
-{% endblock %}
+</body>
+</html>
