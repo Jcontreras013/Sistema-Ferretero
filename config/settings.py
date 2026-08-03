@@ -34,17 +34,17 @@ DEBUG = config("DEBUG", default=True, cast=bool)
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
 
-# Render asigna un hostname externo (p. ej. sistema-ferretero.onrender.com)
-# en esta variable de entorno para cada servicio web.
-RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
-if RENDER_EXTERNAL_HOSTNAME:
-    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+# Railway asigna un dominio público en esta variable de entorno para cada
+# servicio con "networking" público habilitado.
+RAILWAY_PUBLIC_DOMAIN = os.environ.get("RAILWAY_PUBLIC_DOMAIN")
+if RAILWAY_PUBLIC_DOMAIN:
+    ALLOWED_HOSTS.append(RAILWAY_PUBLIC_DOMAIN)
 
 CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", default="", cast=Csv())
-if RENDER_EXTERNAL_HOSTNAME:
-    CSRF_TRUSTED_ORIGINS.append(f"https://{RENDER_EXTERNAL_HOSTNAME}")
+if RAILWAY_PUBLIC_DOMAIN:
+    CSRF_TRUSTED_ORIGINS.append(f"https://{RAILWAY_PUBLIC_DOMAIN}")
 
-# Render está detrás de un proxy TLS; sin esto Django no detecta HTTPS.
+# Railway está detrás de un proxy TLS; sin esto Django no detecta HTTPS.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 
@@ -103,7 +103,8 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-# Render (y otros PaaS) inyectan la cadena de conexión completa en DATABASE_URL.
+# Railway (y otros PaaS) inyectan la cadena de conexión completa en DATABASE_URL.
+# En este proyecto apunta a una base de datos PostgreSQL externa en Neon.
 DATABASE_URL = config("DATABASE_URL", default="")
 
 if DATABASE_URL:
