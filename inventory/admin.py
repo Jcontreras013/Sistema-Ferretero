@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Category, Product, Provider, StockMovement
+from .models import Category, Product, Provider, Purchase, StockMovement
 
 
 @admin.register(Category)
@@ -24,6 +24,13 @@ class ProductAdmin(admin.ModelAdmin):
     )
     search_fields = ("code", "barcode", "name")
     list_filter = ("category", "provider", "is_active")
+
+
+@admin.register(Purchase)
+class PurchaseAdmin(admin.ModelAdmin):
+    list_display = ("date", "provider", "invoice_number", "subtotal", "tax_amount", "total")
+    list_filter = ("provider",)
+    date_hierarchy = "date"
 
 
 @admin.register(StockMovement)

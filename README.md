@@ -29,6 +29,16 @@ reportes, adaptada al régimen fiscal de Honduras (SAR).
   inventario con motivo (compra, venta, merma, daño, robo, devolución, otro).
 - **Clientes y proveedores:** administración (CRUD) de ambos, historial de
   compras por cliente.
+- **Compras (solo administradores):** registro de facturas de compra a
+  proveedores (proveedor, no. de factura, subtotal, tasa de ISV) para
+  calcular el crédito fiscal. No afecta el stock — es un registro fiscal,
+  independiente de los movimientos de inventario.
+- **Declaración jurada de ISV (solo administradores):** cruza el débito
+  fiscal (ISV cobrado en ventas, neto de notas de crédito) contra el crédito
+  fiscal (ISV pagado en compras) por tasa, y calcula el ISV a pagar o el
+  excedente de crédito fiscal a favor para el período — listo para
+  transcribir en el formulario del SAR. No sustituye la declaración oficial
+  ni asesoría de un contador.
 - **Ventas:** historial con filtros por fecha y cliente, detalle de factura
   imprimible, anulación de ventas (solo administradores).
 - **Roles:** Administrador (todo) y Cajero (POS, ventas, clientes, consulta

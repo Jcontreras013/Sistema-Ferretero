@@ -1,13 +1,15 @@
 import datetime
+from collections import defaultdict
 from decimal import Decimal
 
 from django.db.models import DecimalField, ExpressionWrapper, F, Sum
 from django.db.models.functions import TruncDate
 from django.shortcuts import render
 
+from core.models import Company
 from core.permissions import admin_required
-from inventory.models import Product
-from sales.models import CashSession, Sale, SaleItem
+from inventory.models import Product, Purchase
+from sales.models import CashSession, CreditNoteItem, Sale, SaleItem
 
 
 def _parse_range(request):
@@ -144,6 +146,98 @@ def tax_report(request):
         request,
         "reports/tax_report.html",
         {"date_from": date_from, "date_to": date_to, "rows": rows, "total_tax": total_tax},
+    )
+
+
+@admin_required
+def isv_declaration(request):
+    """Declaración jurada de ISV: débito fiscal (ventas - notas de crédito) menos
+    crédito fiscal (compras), lista para transcribir en el formulario del SAR."""
+    date_from, date_to = _parse_range(request)
+    line_total = ExpressionWrapper(
+        F("quantity") * F("unit_price"), output_field=DecimalField(max_digits=12, decimal_places=2)
+    )
+
+    rates = defaultdict(lambda: {
+        "ventas_subtotal": Decimal("0"), "ventas_tax": Decimal("0"),
+        "nc_subtotal": Decimal("0"), "nc_tax": Decimal("0"),
+        "compras_subtotal": Decimal("0"), "compras_tax": Decimal("0"),
+    })
+
+    sale_rows = (
+        SaleItem.objects.filter(
+            sale__created_at__date__gte=date_from,
+            sale__created_at__date__lte=date_to,
+            sale__status="completada",
+        )
+        .values("tax_rate")
+        .annotate(subtotal=Sum(line_total))
+    )
+    for row in sale_rows:
+        rate = row["tax_rate"]
+        subtotal = row["subtotal"] or Decimal("0")
+        rates[rate]["ventas_subtotal"] += subtotal
+        rates[rate]["ventas_tax"] += (subtotal * rate / Decimal("100")).quantize(Decimal("0.01"))
+
+    nc_rows = (
+        CreditNoteItem.objects.filter(
+            credit_note__created_at__date__gte=date_from,
+            credit_note__created_at__date__lte=date_to,
+        )
+        .values("tax_rate")
+        .annotate(subtotal=Sum(line_total))
+    )
+    for row in nc_rows:
+        rate = row["tax_rate"]
+        subtotal = row["subtotal"] or Decimal("0")
+        rates[rate]["nc_subtotal"] += subtotal
+        rates[rate]["nc_tax"] += (subtotal * rate / Decimal("100")).quantize(Decimal("0.01"))
+
+    purchase_rows = (
+        Purchase.objects.filter(date__gte=date_from, date__lte=date_to)
+        .values("tax_rate")
+        .annotate(subtotal=Sum("subtotal"))
+    )
+    for row in purchase_rows:
+        rate = row["tax_rate"]
+        subtotal = row["subtotal"] or Decimal("0")
+        rates[rate]["compras_subtotal"] += subtotal
+        rates[rate]["compras_tax"] += (subtotal * rate / Decimal("100")).quantize(Decimal("0.01"))
+
+    rows = []
+    total_debito_neto = Decimal("0")
+    total_credito = Decimal("0")
+    for rate in sorted(rates.keys()):
+        data = rates[rate]
+        debito_neto = data["ventas_tax"] - data["nc_tax"]
+        rows.append({
+            "tax_rate": rate,
+            "ventas_subtotal": data["ventas_subtotal"],
+            "ventas_tax": data["ventas_tax"],
+            "nc_subtotal": data["nc_subtotal"],
+            "nc_tax": data["nc_tax"],
+            "debito_neto": debito_neto,
+            "compras_subtotal": data["compras_subtotal"],
+            "compras_tax": data["compras_tax"],
+        })
+        total_debito_neto += debito_neto
+        total_credito += data["compras_tax"]
+
+    saldo = total_debito_neto - total_credito
+
+    return render(
+        request,
+        "reports/isv_declaration.html",
+        {
+            "company": Company.load(),
+            "date_from": date_from,
+            "date_to": date_to,
+            "rows": rows,
+            "total_debito_neto": total_debito_neto,
+            "total_credito": total_credito,
+            "saldo": saldo,
+            "saldo_abs": abs(saldo),
+        },
     )
 
 

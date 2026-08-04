@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<h2>{{ title }}</h2>
+<div class="card p-4" style="max-width: 600px;">
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">{{ form.provider.label }}</label>
+            {{ form.provider }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">{{ form.invoice_number.label }}</label>
+            {{ form.invoice_number }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">{{ form.date.label }}</label>
+            {{ form.date }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">{{ form.description.label }}</label>
+            {{ form.description }}
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ form.subtotal.label }}</label>
+                {{ form.subtotal }}
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">{{ form.tax_rate.label }}</label>
+                {{ form.tax_rate }}
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+        <a href="{% url 'inventory:purchase_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

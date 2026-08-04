@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Compras{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2><i class="bi bi-bag-check"></i> Compras (crédito fiscal)</h2>
+    <a href="{% url 'inventory:purchase_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nueva compra</a>
+</div>
+<p class="text-muted">Registra aquí las facturas de compra a tus proveedores para calcular el crédito fiscal
+    de ISV. Esto no afecta el stock — para entradas de inventario usa <a href="{% url 'inventory:product_list' %}">Movimientos de inventario</a>.</p>
+
+<form class="row g-2 mb-3">
+    <div class="col-md-3">
+        <label class="form-label small">Desde</label>
+        <input type="date" name="from" value="{{ date_from|date:'Y-m-d' }}" class="form-control">
+    </div>
+    <div class="col-md-3">
+        <label class="form-label small">Hasta</label>
+        <input type="date" name="to" value="{{ date_to|date:'Y-m-d' }}" class="form-control">
+    </div>
+    <div class="col-md-2 d-flex align-items-end">
+        <button class="btn btn-outline-secondary w-100" type="submit">Filtrar</button>
+    </div>
+</form>
+
+<div class="card">
+    <table class="table table-hover mb-0">
+        <thead><tr><th>Fecha</th><th>Proveedor</th><th>No. factura</th><th>Subtotal</th><th>ISV</th><th>Total</th><th></th></tr></thead>
+        <tbody>
+        {% for purchase in purchases %}
+            <tr>
+                <td>{{ purchase.date|date:"d/m/Y" }}</td>
+                <td>{{ purchase.provider.name|default:"—" }}</td>
+                <td>{{ purchase.invoice_number|default:"—" }}</td>
+                <td>L {{ purchase.subtotal|floatformat:2 }}</td>
+                <td>L {{ purchase.tax_amount|floatformat:2 }}</td>
+                <td>L {{ purchase.total|floatformat:2 }}</td>
+                <td class="text-end">
+                    <a href="{% url 'inventory:purchase_update' purchase.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                    <a href="{% url 'inventory:purchase_delete' purchase.pk %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></a>
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="7" class="text-muted text-center py-4">No hay compras registradas en este período.</td></tr>
+        {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="fw-bold"><td colspan="4"></td><td>L {{ total_credit|floatformat:2 }}</td><td colspan="2"></td></tr>
+        </tfoot>
+    </table>
+</div>
+{% endblock %}

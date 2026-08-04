@@ -109,6 +109,36 @@ class Product(models.Model):
         return 0 <= delta <= 30
 
 
+class Purchase(models.Model):
+    provider = models.ForeignKey(
+        Provider, verbose_name="Proveedor", on_delete=models.SET_NULL, null=True, blank=True, related_name="purchases"
+    )
+    invoice_number = models.CharField("No. de factura del proveedor", max_length=50, blank=True)
+    date = models.DateField("Fecha de compra", default=datetime.date.today)
+    description = models.CharField("Descripción", max_length=255, blank=True)
+    subtotal = models.DecimalField("Subtotal (compras gravadas)", max_digits=12, decimal_places=2, default=0)
+    tax_rate = models.DecimalField("Tasa de ISV (%)", max_digits=5, decimal_places=2, default=Decimal("15.00"))
+    tax_amount = models.DecimalField("ISV pagado (crédito fiscal)", max_digits=12, decimal_places=2, default=0)
+    total = models.DecimalField("Total", max_digits=12, decimal_places=2, default=0)
+    created_by = models.ForeignKey(
+        "auth.User", verbose_name="Registrada por", on_delete=models.SET_NULL, null=True, blank=True
+    )
+    created_at = models.DateTimeField("Creado", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Compra"
+        verbose_name_plural = "Compras (crédito fiscal)"
+        ordering = ["-date", "-id"]
+
+    def __str__(self):
+        return f"{self.provider or 'Proveedor no especificado'} - {self.invoice_number or self.pk}"
+
+    def save(self, *args, **kwargs):
+        self.tax_amount = (self.subtotal * self.tax_rate / Decimal("100")).quantize(Decimal("0.01"))
+        self.total = self.subtotal + self.tax_amount
+        super().save(*args, **kwargs)
+
+
 class StockMovement(models.Model):
     MOVEMENT_TYPES = [
         ("in", "Entrada"),

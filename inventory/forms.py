@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Category, Product, Provider, StockMovement
+from .models import Category, Product, Provider, Purchase, StockMovement
 
 
 class CategoryForm(forms.ModelForm):
@@ -63,6 +63,20 @@ class ProductForm(forms.ModelForm):
 
     def clean_barcode(self):
         return self.cleaned_data.get("barcode") or None
+
+
+class PurchaseForm(forms.ModelForm):
+    class Meta:
+        model = Purchase
+        fields = ["provider", "invoice_number", "date", "description", "subtotal", "tax_rate"]
+        widgets = {
+            "provider": forms.Select(attrs={"class": "form-select"}),
+            "invoice_number": forms.TextInput(attrs={"class": "form-control"}),
+            "date": forms.DateInput(attrs={"class": "form-control", "type": "date"}, format="%Y-%m-%d"),
+            "description": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej. compra de tornillería y cemento"}),
+            "subtotal": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+            "tax_rate": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+        }
 
 
 class StockMovementForm(forms.ModelForm):

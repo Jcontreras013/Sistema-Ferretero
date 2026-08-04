@@ -12,7 +12,7 @@ from core.audit import log_action
 from core.models import AuditLog
 from core.permissions import admin_required
 
-from .forms import CategoryForm, ProductForm, ProviderForm, StockMovementForm
+from .forms import CategoryForm, ProductForm, ProviderForm, PurchaseForm, StockMovementForm
 from .importers import (
     PRODUCT_FIELDS,
     detect_column_mapping,
@@ -23,7 +23,7 @@ from .importers import (
     parse_tax_rate,
     parse_uploaded_file,
 )
-from .models import Category, Product, Provider, StockMovement
+from .models import Category, Product, Provider, Purchase, StockMovement
 
 IMPORT_SESSION_PATH = "product_import_path"
 IMPORT_SESSION_NAME = "product_import_name"
@@ -182,6 +182,66 @@ def provider_delete(request, pk):
         messages.success(request, "Proveedor eliminado.")
         return redirect("inventory:provider_list")
     return render(request, "inventory/provider_confirm_delete.html", {"provider": provider})
+
+
+@admin_required
+def purchase_list(request):
+    import datetime
+
+    from django.utils.dateparse import parse_date
+
+    today = datetime.date.today()
+    date_from = parse_date(request.GET.get("from", "")) or today.replace(day=1)
+    date_to = parse_date(request.GET.get("to", "")) or today
+    purchases = Purchase.objects.select_related("provider").filter(date__gte=date_from, date__lte=date_to)
+    total_credit = sum((p.tax_amount for p in purchases), Decimal("0"))
+    return render(
+        request,
+        "inventory/purchase_list.html",
+        {"purchases": purchases, "date_from": date_from, "date_to": date_to, "total_credit": total_credit},
+    )
+
+
+@admin_required
+def purchase_create(request):
+    if request.method == "POST":
+        form = PurchaseForm(request.POST)
+        if form.is_valid():
+            purchase = form.save(commit=False)
+            purchase.created_by = request.user
+            purchase.save()
+            log_action(request.user, "created", purchase)
+            messages.success(request, "Compra registrada correctamente.")
+            return redirect("inventory:purchase_list")
+    else:
+        form = PurchaseForm()
+    return render(request, "inventory/purchase_form.html", {"form": form, "title": "Nueva compra"})
+
+
+@admin_required
+def purchase_update(request, pk):
+    purchase = get_object_or_404(Purchase, pk=pk)
+    if request.method == "POST":
+        form = PurchaseForm(request.POST, instance=purchase)
+        if form.is_valid():
+            form.save()
+            log_action(request.user, "updated", purchase)
+            messages.success(request, "Compra actualizada.")
+            return redirect("inventory:purchase_list")
+    else:
+        form = PurchaseForm(instance=purchase)
+    return render(request, "inventory/purchase_form.html", {"form": form, "title": "Editar compra"})
+
+
+@admin_required
+def purchase_delete(request, pk):
+    purchase = get_object_or_404(Purchase, pk=pk)
+    if request.method == "POST":
+        log_action(request.user, "deleted", purchase)
+        purchase.delete()
+        messages.success(request, "Compra eliminada.")
+        return redirect("inventory:purchase_list")
+    return render(request, "inventory/purchase_confirm_delete.html", {"purchase": purchase})
 
 
 @admin_required

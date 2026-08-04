@@ -11,5 +11,6 @@ urlpatterns = [
     path("stock-bajo/", views.low_stock_report, name="low_stock_report"),
     path("por-vencer/", views.expiring_products_report, name="expiring_products_report"),
     path("impuestos/", views.tax_report, name="tax_report"),
+    path("declaracion-isv/", views.isv_declaration, name="isv_declaration"),
     path("flujo-caja/", views.cash_flow_report, name="cash_flow_report"),
 ]

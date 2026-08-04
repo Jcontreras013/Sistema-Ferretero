@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Declaración jurada de ISV{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-3 no-print">
+    <h2><i class="bi bi-file-earmark-text"></i> Declaración jurada de ISV</h2>
+    <button onclick="window.print()" class="btn btn-outline-secondary"><i class="bi bi-printer"></i> Imprimir</button>
+</div>
+
+<form class="row g-2 mb-3 no-print">
+    <div class="col-md-3">
+        <label class="form-label small">Desde</label>
+        <input type="date" name="from" value="{{ date_from|date:'Y-m-d' }}" class="form-control">
+    </div>
+    <div class="col-md-3">
+        <label class="form-label small">Hasta</label>
+        <input type="date" name="to" value="{{ date_to|date:'Y-m-d' }}" class="form-control">
+    </div>
+    <div class="col-md-2 d-flex align-items-end">
+        <button class="btn btn-outline-secondary w-100" type="submit">Filtrar</button>
+    </div>
+</form>
+
+<p class="text-muted no-print">
+    Resumen de débito y crédito fiscal para transcribir en el formulario del SAR. No sustituye la declaración
+    oficial ni asesoría de un contador — verifica los montos antes de presentarla. El crédito fiscal solo
+    incluye las compras registradas en <a href="{% url 'inventory:purchase_list' %}">Inventario → Compras</a>.
+</p>
+
+<div class="invoice-box card p-4">
+    <div class="text-center mb-4">
+        <h4 class="mb-0">{{ company.trade_name|default:company.business_name|default:"Ferretería" }}</h4>
+        <div class="text-muted small">RTN: {{ company.rtn|default:"—" }}</div>
+        <h5 class="mt-3 mb-0">Declaración jurada de ISV</h5>
+        <div class="text-muted small">Período: {{ date_from|date:"d/m/Y" }} al {{ date_to|date:"d/m/Y" }}</div>
+    </div>
+
+    <table class="table table-sm table-bordered">
+        <thead>
+            <tr>
+                <th>Tasa</th>
+                <th>Ventas gravadas</th>
+                <th>Débito fiscal</th>
+                <th>Notas de crédito (base)</th>
+                <th>Notas de crédito (ISV)</th>
+                <th>Débito fiscal neto</th>
+                <th>Compras gravadas</th>
+                <th>Crédito fiscal</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for row in rows %}
+            <tr>
+                <td>{{ row.tax_rate|floatformat:0 }}%</td>
+                <td>L {{ row.ventas_subtotal|floatformat:2 }}</td>
+                <td>L {{ row.ventas_tax|floatformat:2 }}</td>
+                <td>L {{ row.nc_subtotal|floatformat:2 }}</td>
+                <td>L {{ row.nc_tax|floatformat:2 }}</td>
+                <td>L {{ row.debito_neto|floatformat:2 }}</td>
+                <td>L {{ row.compras_subtotal|floatformat:2 }}</td>
+                <td>L {{ row.compras_tax|floatformat:2 }}</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="8" class="text-muted text-center py-3">No hay movimientos en el período seleccionado.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="row justify-content-end mt-3">
+        <div class="col-md-5">
+            <table class="table table-sm mb-0">
+                <tr>
+                    <td>Total débito fiscal neto (ventas - notas de crédito)</td>
+                    <td class="text-end">L {{ total_debito_neto|floatformat:2 }}</td>
+                </tr>
+                <tr>
+                    <td>Total crédito fiscal (compras)</td>
+                    <td class="text-end">L {{ total_credito|floatformat:2 }}</td>
+                </tr>
+                {% if saldo >= 0 %}
+                <tr class="fw-bold border-top">
+                    <td>ISV a pagar</td>
+                    <td class="text-end">L {{ saldo|floatformat:2 }}</td>
+                </tr>
+                {% else %}
+                <tr class="fw-bold border-top">
+                    <td>Excedente de crédito fiscal (a favor)</td>
+                    <td class="text-end">L {{ saldo_abs|floatformat:2 }}</td>
+                </tr>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Eliminar compra{% endblock %}
+{% block content %}
+<h2>Eliminar compra</h2>
+<div class="card p-4" style="max-width: 500px;">
+    <p>¿Seguro que deseas eliminar la compra <strong>{{ purchase }}</strong> del {{ purchase.date|date:"d/m/Y" }}?</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Sí, eliminar</button>
+        <a href="{% url 'inventory:purchase_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}
