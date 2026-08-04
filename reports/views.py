@@ -150,6 +150,49 @@ def tax_report(request):
 
 
 @admin_required
+def expense_report(request):
+    """Compras y gastos agrupados por categoría, para entregarle un resumen al contador."""
+    date_from, date_to = _parse_range(request)
+    purchases = Purchase.objects.select_related("provider").filter(
+        date__gte=date_from, date__lte=date_to
+    ).order_by("category", "date")
+
+    groups = []
+    grand_subtotal = Decimal("0")
+    grand_tax = Decimal("0")
+    grand_total = Decimal("0")
+    for category_value, category_label in Purchase.CATEGORY_CHOICES:
+        items = [p for p in purchases if p.category == category_value]
+        subtotal = sum((p.subtotal for p in items), Decimal("0"))
+        tax = sum((p.tax_amount for p in items), Decimal("0"))
+        total = sum((p.total for p in items), Decimal("0"))
+        groups.append({
+            "label": category_label,
+            "items": items,
+            "subtotal": subtotal,
+            "tax": tax,
+            "total": total,
+        })
+        grand_subtotal += subtotal
+        grand_tax += tax
+        grand_total += total
+
+    return render(
+        request,
+        "reports/expense_report.html",
+        {
+            "company": Company.load(),
+            "date_from": date_from,
+            "date_to": date_to,
+            "groups": groups,
+            "grand_subtotal": grand_subtotal,
+            "grand_tax": grand_tax,
+            "grand_total": grand_total,
+        },
+    )
+
+
+@admin_required
 def isv_declaration(request):
     """Declaración jurada de ISV: débito fiscal (ventas - notas de crédito) menos
     crédito fiscal (compras), lista para transcribir en el formulario del SAR."""

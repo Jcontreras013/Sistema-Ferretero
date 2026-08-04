@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Compras y gastos para el contador{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-3 no-print">
+    <h2><i class="bi bi-journal-text"></i> Reporte de compras y gastos</h2>
+    <button onclick="window.print()" class="btn btn-outline-secondary"><i class="bi bi-printer"></i> Imprimir</button>
+</div>
+
+<form class="row g-2 mb-3 no-print">
+    <div class="col-md-3">
+        <label class="form-label small">Desde</label>
+        <input type="date" name="from" value="{{ date_from|date:'Y-m-d' }}" class="form-control">
+    </div>
+    <div class="col-md-3">
+        <label class="form-label small">Hasta</label>
+        <input type="date" name="to" value="{{ date_to|date:'Y-m-d' }}" class="form-control">
+    </div>
+    <div class="col-md-2 d-flex align-items-end">
+        <button class="btn btn-outline-secondary w-100" type="submit">Filtrar</button>
+    </div>
+</form>
+
+<p class="text-muted no-print">
+    Resumen de todas las facturas registradas en <a href="{% url 'inventory:purchase_list' %}">Compras y gastos</a>,
+    agrupadas por categoría, para entregarle al contador junto con la declaración de ISV.
+</p>
+
+<div class="invoice-box card p-4">
+    <div class="text-center mb-4">
+        <h4 class="mb-0">{{ company.trade_name|default:company.business_name|default:"Ferretería" }}</h4>
+        <div class="text-muted small">RTN: {{ company.rtn|default:"—" }}</div>
+        <h5 class="mt-3 mb-0">Compras y gastos por categoría</h5>
+        <div class="text-muted small">Período: {{ date_from|date:"d/m/Y" }} al {{ date_to|date:"d/m/Y" }}</div>
+    </div>
+
+    {% for group in groups %}
+    <h6 class="mt-4 mb-2">{{ group.label }}</h6>
+    <table class="table table-sm table-bordered">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Proveedor / acreedor</th>
+                <th>No. factura</th>
+                <th>Descripción</th>
+                <th>Subtotal</th>
+                <th>ISV</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for item in group.items %}
+            <tr>
+                <td>{{ item.date|date:"d/m/Y" }}</td>
+                <td>{{ item.provider.name|default:"—" }}</td>
+                <td>{{ item.invoice_number|default:"—" }}</td>
+                <td>{{ item.description|default:"—" }}</td>
+                <td>L {{ item.subtotal|floatformat:2 }}</td>
+                <td>L {{ item.tax_amount|floatformat:2 }}</td>
+                <td>L {{ item.total|floatformat:2 }}</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="7" class="text-muted text-center py-2">Sin movimientos en esta categoría.</td></tr>
+        {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="fw-bold">
+                <td colspan="4">Subtotal {{ group.label|lower }}</td>
+                <td>L {{ group.subtotal|floatformat:2 }}</td>
+                <td>L {{ group.tax|floatformat:2 }}</td>
+                <td>L {{ group.total|floatformat:2 }}</td>
+            </tr>
+        </tfoot>
+    </table>
+    {% endfor %}
+
+    <div class="row justify-content-end mt-3">
+        <div class="col-md-5">
+            <table class="table table-sm mb-0">
+                <tr><td>Total subtotal (todas las categorías)</td><td class="text-end">L {{ grand_subtotal|floatformat:2 }}</td></tr>
+                <tr><td>Total ISV (crédito fiscal)</td><td class="text-end">L {{ grand_tax|floatformat:2 }}</td></tr>
+                <tr class="fw-bold border-top"><td>Total general</td><td class="text-end">L {{ grand_total|floatformat:2 }}</td></tr>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

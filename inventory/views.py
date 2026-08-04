@@ -193,12 +193,26 @@ def purchase_list(request):
     today = datetime.date.today()
     date_from = parse_date(request.GET.get("from", "")) or today.replace(day=1)
     date_to = parse_date(request.GET.get("to", "")) or today
+    category = request.GET.get("category", "")
+
     purchases = Purchase.objects.select_related("provider").filter(date__gte=date_from, date__lte=date_to)
+    if category:
+        purchases = purchases.filter(category=category)
+
     total_credit = sum((p.tax_amount for p in purchases), Decimal("0"))
+    total_amount = sum((p.total for p in purchases), Decimal("0"))
     return render(
         request,
         "inventory/purchase_list.html",
-        {"purchases": purchases, "date_from": date_from, "date_to": date_to, "total_credit": total_credit},
+        {
+            "purchases": purchases,
+            "date_from": date_from,
+            "date_to": date_to,
+            "category": category,
+            "category_choices": Purchase.CATEGORY_CHOICES,
+            "total_credit": total_credit,
+            "total_amount": total_amount,
+        },
     )
 
 

@@ -28,8 +28,8 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(Purchase)
 class PurchaseAdmin(admin.ModelAdmin):
-    list_display = ("date", "provider", "invoice_number", "subtotal", "tax_amount", "total")
-    list_filter = ("provider",)
+    list_display = ("date", "category", "provider", "invoice_number", "subtotal", "tax_amount", "total")
+    list_filter = ("category", "provider")
     date_hierarchy = "date"
 
 

@@ -68,12 +68,13 @@ class ProductForm(forms.ModelForm):
 class PurchaseForm(forms.ModelForm):
     class Meta:
         model = Purchase
-        fields = ["provider", "invoice_number", "date", "description", "subtotal", "tax_rate"]
+        fields = ["category", "provider", "invoice_number", "date", "description", "subtotal", "tax_rate"]
         widgets = {
+            "category": forms.Select(attrs={"class": "form-select"}),
             "provider": forms.Select(attrs={"class": "form-select"}),
             "invoice_number": forms.TextInput(attrs={"class": "form-control"}),
             "date": forms.DateInput(attrs={"class": "form-control", "type": "date"}, format="%Y-%m-%d"),
-            "description": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej. compra de tornillería y cemento"}),
+            "description": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej. pago de energía eléctrica, compra de tornillería..."}),
             "subtotal": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
             "tax_rate": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
         }

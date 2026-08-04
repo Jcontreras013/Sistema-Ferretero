@@ -29,16 +29,23 @@ reportes, adaptada al régimen fiscal de Honduras (SAR).
   inventario con motivo (compra, venta, merma, daño, robo, devolución, otro).
 - **Clientes y proveedores:** administración (CRUD) de ambos, historial de
   compras por cliente.
-- **Compras (solo administradores):** registro de facturas de compra a
-  proveedores (proveedor, no. de factura, subtotal, tasa de ISV) para
-  calcular el crédito fiscal. No afecta el stock — es un registro fiscal,
-  independiente de los movimientos de inventario.
+- **Compras y gastos (solo administradores):** registro de facturas
+  clasificadas en tres categorías — compra a proveedor (mercadería), gasto
+  operativo (servicios, renta, etc.) o pago a acreedor (préstamos, cuentas
+  por pagar a terceros) — con proveedor/acreedor, no. de factura, subtotal y
+  tasa de ISV (0% para pagos que no generan crédito fiscal, como cuotas de
+  préstamo). No afecta el stock — es un registro fiscal, independiente de
+  los movimientos de inventario.
 - **Declaración jurada de ISV (solo administradores):** cruza el débito
   fiscal (ISV cobrado en ventas, neto de notas de crédito) contra el crédito
-  fiscal (ISV pagado en compras) por tasa, y calcula el ISV a pagar o el
-  excedente de crédito fiscal a favor para el período — listo para
-  transcribir en el formulario del SAR. No sustituye la declaración oficial
-  ni asesoría de un contador.
+  fiscal (ISV pagado en las facturas de Compras y gastos, de cualquier
+  categoría) por tasa, y calcula el ISV a pagar o el excedente de crédito
+  fiscal a favor para el período — listo para transcribir en el formulario
+  del SAR. No sustituye la declaración oficial ni asesoría de un contador.
+- **Reporte de compras y gastos para el contador (solo administradores):**
+  el mismo registro de facturas agrupado por categoría (proveedor, gasto
+  operativo, acreedor), con subtotales por categoría y total general,
+  pensado para entregarle al contador junto con la declaración de ISV.
 - **Ventas:** historial con filtros por fecha y cliente, detalle de factura
   imprimible, anulación de ventas (solo administradores).
 - **Roles:** Administrador (todo) y Cajero (POS, ventas, clientes, consulta

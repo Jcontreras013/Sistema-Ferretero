@@ -12,5 +12,6 @@ urlpatterns = [
     path("por-vencer/", views.expiring_products_report, name="expiring_products_report"),
     path("impuestos/", views.tax_report, name="tax_report"),
     path("declaracion-isv/", views.isv_declaration, name="isv_declaration"),
+    path("compras-y-gastos/", views.expense_report, name="expense_report"),
     path("flujo-caja/", views.cash_flow_report, name="cash_flow_report"),
 ]
