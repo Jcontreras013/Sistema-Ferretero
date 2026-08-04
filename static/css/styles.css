@@ -34,6 +34,45 @@ body {
     transition: transform 0.1s ease-in-out;
 }
 
+/* ---------- Ticket de venta tipo hoja de cálculo ---------- */
+
+.pos-ticket {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.pos-ticket-table {
+    font-size: 0.92rem;
+}
+
+.pos-ticket-table th {
+    background: #f8f9fa;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #6b7280;
+    border-color: var(--color-border) !important;
+    white-space: nowrap;
+}
+
+.pos-ticket-table td {
+    border-color: var(--color-border) !important;
+    vertical-align: middle;
+}
+
+.pos-qty-input {
+    width: 72px;
+    display: inline-block;
+}
+
+.pos-totals .pos-total-line {
+    border-top: 2px solid var(--color-dark);
+    padding-top: 0.5rem;
+    margin-top: 0.25rem;
+    color: var(--color-primary-dark);
+}
+
 .pos-product-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);

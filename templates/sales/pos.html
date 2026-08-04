@@ -6,13 +6,41 @@
     <span class="badge bg-success">Caja abierta desde {{ open_session.opened_at|date:"d/m/Y H:i" }}</span>
 </div>
 
+<input type="text" id="searchBox" class="form-control form-control-lg mb-3" placeholder="Código, código de barras o nombre... (Enter para agregar)" autofocus>
+
 <div class="row g-4">
-    <div class="col-md-7">
-        <input type="text" id="searchBox" class="form-control mb-3" placeholder="Buscar o escanear código de barras... (Enter para agregar)" autofocus>
-        <div id="productGrid" class="row g-2" style="max-height: 65vh; overflow-y: auto;"></div>
+    <div class="col-lg-8">
+        <div class="card p-0 pos-ticket">
+            <table class="table table-bordered table-sm mb-0 pos-ticket-table" id="cartTable">
+                <thead>
+                    <tr>
+                        <th style="width:3%">#</th>
+                        <th style="width:12%">Código</th>
+                        <th>Producto</th>
+                        <th style="width:10%" class="text-end">Cant.</th>
+                        <th style="width:12%" class="text-end">Precio</th>
+                        <th style="width:13%" class="text-end">Subtotal</th>
+                        <th style="width:4%"></th>
+                    </tr>
+                </thead>
+                <tbody id="cartBody"></tbody>
+            </table>
+            <div id="cartEmpty" class="text-muted text-center py-5">
+                Escribe o escanea un código arriba para agregar productos a la venta.
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="toggleCatalog">
+                <i class="bi bi-grid-3x3-gap"></i> Ver catálogo de productos
+            </button>
+            <div id="catalogPanel" class="mt-2" style="display:none;">
+                <div id="productGrid" class="row g-2" style="max-height: 45vh; overflow-y: auto;"></div>
+            </div>
+        </div>
     </div>
 
-    <div class="col-md-5">
+    <div class="col-lg-4">
         <form method="post" id="saleForm">
             {% csrf_token %}
             <input type="hidden" name="cart_data" id="cartData">
@@ -41,15 +69,11 @@
                 <input type="text" name="notes" class="form-control">
             </div>
 
-            <div class="card p-3">
-                <h6>Carrito</h6>
-                <table class="table table-sm" id="cartTable">
-                    <thead><tr><th>Producto</th><th>Cant.</th><th>Precio</th><th>Subt.</th><th></th></tr></thead>
-                    <tbody id="cartBody"></tbody>
-                </table>
+            <div class="card p-3 pos-totals">
+                <div class="d-flex justify-content-between small text-muted"><span>Ítems</span><span id="cartItemCount">0</span></div>
                 <div class="d-flex justify-content-between"><span>Subtotal</span><strong id="cartSubtotal">L 0.00</strong></div>
                 <div class="d-flex justify-content-between"><span>Impuesto (ISV)</span><strong id="cartTax">L 0.00</strong></div>
-                <div class="d-flex justify-content-between fs-5"><span>Total</span><strong id="cartTotal">L 0.00</strong></div>
+                <div class="d-flex justify-content-between fs-3 pos-total-line"><span>Total</span><strong id="cartTotal">L 0.00</strong></div>
                 <button type="submit" class="btn btn-success btn-lg mt-3" id="checkoutBtn" disabled>
                     <i class="bi bi-check-circle"></i> Cobrar venta
                 </button>
@@ -79,7 +103,10 @@ function renderProducts(filter) {
                     <div class="text-success">L ${parseFloat(p.price).toFixed(2)}</div>
                     <div class="small">Stock: ${p.stock} ${p.unit}</div>
                 </div>`;
-            col.querySelector('.pos-product-card').addEventListener('click', () => addToCart(p));
+            col.querySelector('.pos-product-card').addEventListener('click', () => {
+                addToCart(p);
+                searchBox.focus();
+            });
             grid.appendChild(col);
         });
 }
@@ -93,6 +120,7 @@ function addToCart(product) {
     } else {
         cart.push({
             id: product.id,
+            code: product.code,
             name: product.name,
             price: parseFloat(product.price),
             taxRate: parseFloat(product.tax_rate),
@@ -114,6 +142,11 @@ function addByBarcodeOrCode(term) {
     return false;
 }
 
+function flashSearchError() {
+    searchBox.classList.add('is-invalid');
+    setTimeout(() => searchBox.classList.remove('is-invalid'), 500);
+}
+
 function updateQuantity(id, quantity) {
     const item = cart.find(i => i.id === id);
     if (!item) return;
@@ -132,21 +165,27 @@ function removeFromCart(id) {
 
 function renderCart() {
     const body = document.getElementById('cartBody');
+    const empty = document.getElementById('cartEmpty');
     body.innerHTML = '';
     let subtotal = 0;
     let tax = 0;
-    cart.forEach(item => {
+    let itemCount = 0;
+
+    cart.forEach((item, index) => {
         const lineSubtotal = item.price * item.quantity;
         const lineTax = lineSubtotal * (item.taxRate / 100);
         subtotal += lineSubtotal;
         tax += lineTax;
+        itemCount += item.quantity;
         const row = document.createElement('tr');
         row.innerHTML = `
+            <td class="text-muted">${index + 1}</td>
+            <td class="text-muted font-monospace">${item.code}</td>
             <td>${item.name}</td>
-            <td><input type="number" min="0" step="1" value="${item.quantity}" class="form-control form-control-sm" style="width:70px" data-id="${item.id}"></td>
-            <td>L ${item.price.toFixed(2)}</td>
-            <td>L ${lineSubtotal.toFixed(2)}</td>
-            <td><button type="button" class="btn btn-sm btn-outline-danger" data-remove="${item.id}"><i class="bi bi-x"></i></button></td>
+            <td class="text-end"><input type="number" min="0" step="1" value="${item.quantity}" class="form-control form-control-sm text-end pos-qty-input" data-id="${item.id}"></td>
+            <td class="text-end font-monospace">${item.price.toFixed(2)}</td>
+            <td class="text-end font-monospace fw-semibold">${lineSubtotal.toFixed(2)}</td>
+            <td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger py-0 px-1" data-remove="${item.id}"><i class="bi bi-x"></i></button></td>
         `;
         body.appendChild(row);
     });
@@ -155,12 +194,26 @@ function renderCart() {
         input.addEventListener('change', (e) => {
             updateQuantity(parseInt(e.target.dataset.id), parseFloat(e.target.value || '0'));
         });
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                updateQuantity(parseInt(e.target.dataset.id), parseFloat(e.target.value || '0'));
+                searchBox.focus();
+            }
+        });
     });
     body.querySelectorAll('button[data-remove]').forEach(btn => {
-        btn.addEventListener('click', (e) => removeFromCart(parseInt(e.currentTarget.dataset.remove)));
+        btn.addEventListener('click', (e) => {
+            removeFromCart(parseInt(e.currentTarget.dataset.remove));
+            searchBox.focus();
+        });
     });
 
+    document.getElementById('cartTable').style.display = cart.length ? '' : 'none';
+    empty.style.display = cart.length ? 'none' : '';
+
     const total = subtotal + tax;
+    document.getElementById('cartItemCount').textContent = itemCount;
     document.getElementById('cartSubtotal').textContent = 'L ' + subtotal.toFixed(2);
     document.getElementById('cartTax').textContent = 'L ' + tax.toFixed(2);
     document.getElementById('cartTotal').textContent = 'L ' + total.toFixed(2);
@@ -267,8 +320,19 @@ searchBox.addEventListener('keydown', (e) => {
         if (addByBarcodeOrCode(searchBox.value)) {
             searchBox.value = '';
             renderProducts('');
+        } else if (searchBox.value.trim()) {
+            flashSearchError();
         }
     }
+});
+
+document.getElementById('toggleCatalog').addEventListener('click', (e) => {
+    const panel = document.getElementById('catalogPanel');
+    const showing = panel.style.display !== 'none';
+    panel.style.display = showing ? 'none' : 'block';
+    e.currentTarget.innerHTML = showing
+        ? '<i class="bi bi-grid-3x3-gap"></i> Ver catálogo de productos'
+        : '<i class="bi bi-x-lg"></i> Ocultar catálogo';
 });
 
 document.getElementById('saleForm').addEventListener('submit', () => {
